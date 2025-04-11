@@ -1,0 +1,119 @@
+# -- specifies pull secrets for image repository
+imagePullSecrets: []
+# -- overrides chart name
+nameOverride: ""
+# -- Overrides helm-generated chart fullname
+fullnameOverride: ""
+
+image:
+  # -- Overrides the image repository
+  repository: ghcr.io/pyrra-dev/pyrra
+  # -- Overrides pullpolicy
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag
+  tag: "v0.7.7"
+
+additionalLabels: {}
+  # app: pyrra
+
+# -- Extra args for Pyrra's API container
+extraApiArgs: []
+# -- Extra args for Pyrra's Kubernetes container
+extraKubernetesArgs: []
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use.
+  # -- If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# -- additional annotations for server pod
+podAnnotations: {}
+# -- additional security context for server pod
+podSecurityContext: {}
+# -- additional security context for server
+securityContext: {}
+
+# -- url to prometheus instance with metrics
+prometheusUrl: http://prometheus-operated.monitoring.svc.cluster.local:9090
+# -- url to public-facing prometheus UI in case it differs from prometheusUrl
+prometheusExternalUrl: ""
+
+service:
+  # -- Annotations to add to the service
+  annotations: {}
+  # -- service type for server
+  type: ClusterIP
+  # -- service port for server
+  port: 9099
+  # -- service nodePort to expose
+  # -- node port for HTTP, choose port between <30000-32767>
+  nodePort: ""
+
+ingress:
+  # -- enables ingress for server UI
+  enabled: false
+  # -- specifies ingress class name (ie nginx)
+  className: ""
+  # -- additional annotations for ingress
+  annotations:
+    {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# -- resource limits and requests for server pod
+resources:  {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 30Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 20Mi
+
+# -- node selector for scheduling server pod
+nodeSelector: {}
+# -- tolerations for scheduling server pod
+tolerations: {}
+
+serviceMonitor:
+  # -- enables servicemonitor for server monitoring
+  enabled: false
+  # -- Set labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator
+  labels: {}
+  # -- provides the possibility to override the jobName if needed
+  # jobLabel: fancy-pyrra-server
+
+genericRules:
+  # -- enables generate Pyrra generic recording rules. Pyrra generates metrics with the same name for each SLO.
+  enabled: false
+
+validatingWebhookConfiguration:
+  # -- enables admission webhook for server to validate SLOs, this requires cert-manager to be installed
+  enabled: false
+
+dashboards:
+  # -- enables Grafana dashboards being deployed via configmap
+  enabled: false
+  namespace: ~
+  # -- default value from the Grafana chart
+  label: grafana_dashboard
+  # -- default value from the Grafana chart
+  labelValue: "1"
+  annotations: {}
+  extraLabels: {}
