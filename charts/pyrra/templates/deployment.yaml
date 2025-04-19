@@ -94,4 +94,3 @@ spec:
           secret:
             secretName: {{ include "pyrra.fullname" . }}-webhook-validation
       {{- end }}
-  
