@@ -1,0 +1,14 @@
+name: EditorConfig Checker
+
+on:
+  push:
+
+jobs:
+  editorconfig:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+
+      - name: Setup editorconfig-checker
+        uses: editorconfig-checker/action-editorconfig-checker@main
+      - run: editorconfig-checker
