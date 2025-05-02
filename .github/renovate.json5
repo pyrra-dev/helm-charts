@@ -1,0 +1,8 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  commitBody: 'Signed-off-by: Pyrra renovatebot <renoavte@pyrra.dev>',
+  extends: [
+    'config:recommended',
+    'customManagers:helmChartYamlAppVersions'
+  ],
+}
