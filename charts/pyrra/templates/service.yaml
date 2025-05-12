@@ -18,6 +18,7 @@ spec:
       port: 9444
     - name: http
       port: {{ .Values.service.port }}
+      targetPort: http
       {{- if .Values.service.nodePort }}
       nodePort: {{ .Values.service.nodePort }}
       {{- end }}
