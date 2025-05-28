@@ -44,3 +44,16 @@ rules:
   - get
   - patch
   - update
+{{- if .Values.configMapMode.enabled }}
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - create
+  - list
+  - watch
+  - update
+  - delete
+{{- end }}

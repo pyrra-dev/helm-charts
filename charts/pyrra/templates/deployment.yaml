@@ -36,6 +36,9 @@ spec:
             {{- if .Values.genericRules.enabled }}
             - --generic-rules
             {{- end }}
+            {{- if .Values.configMapMode.enabled }}
+            - --config-map-mode
+            {{- end }}
             {{- if and .Values.validatingWebhookConfiguration.enabled ($.Capabilities.APIVersions.Has "cert-manager.io/v1") }}
             - --disable-webhooks=false
             {{- end }}

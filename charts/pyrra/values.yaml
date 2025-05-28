@@ -140,6 +140,10 @@ genericRules:
   # -- enables generate Pyrra generic recording rules. Pyrra generates metrics with the same name for each SLO.
   enabled: false
 
+configMapMode:
+  # -- enables configMap mode to generate the PrometheusRules in a configMap
+  enabled: false
+
 validatingWebhookConfiguration:
   # -- enables admission webhook for server to validate SLOs, this requires cert-manager to be installed
   enabled: false
