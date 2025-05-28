@@ -58,3 +58,15 @@ rules:
   - update
   - watch
 {{- end }}
+{{- if .Values.configMapMode.enabled }}
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+{{- end }}
