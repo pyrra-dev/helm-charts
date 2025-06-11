@@ -33,7 +33,7 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| additionalLabels | object | `{}` |  |
+| additionalLabels | object | `{}` | Extra labels to add to the deploymentSpec and podSpec |
 | dashboards.annotations | object | `{}` |  |
 | dashboards.enabled | bool | `false` | enables Grafana dashboards being deployed via configmap |
 | dashboards.extraLabels | object | `{}` |  |
