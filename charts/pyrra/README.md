@@ -1,6 +1,6 @@
 # pyrra
 
-![Version: 0.15.0](https://img.shields.io/badge/Version-0.15.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.8.1](https://img.shields.io/badge/AppVersion-v0.8.1-informational?style=flat-square)
+![Version: 0.15.1](https://img.shields.io/badge/Version-0.15.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.8.1](https://img.shields.io/badge/AppVersion-v0.8.1-informational?style=flat-square)
 
 SLO manager and alert generator
 
@@ -20,7 +20,7 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| additionalLabels | object | `{}` |  |
+| additionalLabels | object | `{}` | Extra labels to add to the deploymentSpec and podSpec |
 | dashboards.annotations | object | `{}` |  |
 | dashboards.enabled | bool | `false` | enables Grafana dashboards being deployed via configmap |
 | dashboards.extraLabels | object | `{}` |  |
