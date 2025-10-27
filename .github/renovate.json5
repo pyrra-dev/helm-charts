@@ -3,6 +3,6 @@
   commitBody: 'Signed-off-by: Pyrra renovatebot <renoavte@pyrra.dev>',
   extends: [
     'config:recommended',
-    'customManagers:helmChartYamlAppVersions'
+    'github>prometheus-community/helm-charts//renovate.json',
   ],
 }
