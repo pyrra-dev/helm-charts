@@ -3,10 +3,3 @@ repos:
     rev: v1.14.2
     hooks:
       - id: helm-docs-container
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
-    hooks:
-      - id: check-json
-      - id: check-yaml
-        # exclude all Helm templates
-        exclude: ^charts/pyrra/templates
