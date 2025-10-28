@@ -34,17 +34,26 @@ serviceAccount:
 
 # -- additional annotations for server pod
 podAnnotations: {}
-# -- additional security context for server pod
-podSecurityContext: {}
-# -- additional security context for server
-securityContext: {}
+# -- security context for pod
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+# -- security context for each container
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
 
-# -- url to prometheus instance with metrics
+
+# -- URL to prometheus instance with metrics
 prometheusUrl: http://prometheus-operated.monitoring.svc.cluster.local:9090
-# -- url to public-facing prometheus UI in case it differs from prometheusUrl
+# -- URL to public-facing prometheus UI in case it differs from prometheusUrl
 prometheusExternalUrl: ""
 
-# -- url under which the pyrra web server is serving content. this can be set when running behind a reverse proxy.
+# -- URL under which the pyrra web server is serving content. this can be set when running behind a reverse proxy.
 # -- Must start with a slash and not end with a slash.
 routePrefix: ""
 
