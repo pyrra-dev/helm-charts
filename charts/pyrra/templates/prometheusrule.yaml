@@ -1,4 +1,4 @@
-{{- if .Values.prometheusRule.enabled }}
+{{- if .Values.prometheusRule.enabled -}}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -24,4 +24,4 @@ spec:
           annotations:
             summary: Failed to reconcile state
             description: 'Pyrra Kubernetes operator failed to reconcile. Check logs for invalid ServiceLevelObjectives.'
-{{- end }}
+{{- end -}}

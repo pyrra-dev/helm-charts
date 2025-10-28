@@ -1,4 +1,4 @@
-{{- if .Values.serviceMonitorOperator.enabled }}
+{{- if .Values.serviceMonitorOperator.enabled -}}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -30,4 +30,4 @@ spec:
     relabelings:
     {{- toYaml .Values.serviceMonitorOperator.relabelings | nindent 6 }}
     {{- end }}
-{{- end }}
+{{- end -}}

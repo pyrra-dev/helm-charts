@@ -55,6 +55,8 @@ spec:
           ports:
             - name: op-metrics
               containerPort: {{ include "pyrra.operatorMetricsPort" . }}
+            - name: webhooks
+              containerPort: 9443
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
