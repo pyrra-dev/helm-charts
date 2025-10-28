@@ -46,7 +46,7 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.operator.resources | nindent 12 }}
           {{- if and .Values.validatingWebhookConfiguration.enabled ($.Capabilities.APIVersions.Has "cert-manager.io/v1") }}
           volumeMounts:
           - mountPath: /tmp/k8s-webhook-server/serving-certs
@@ -75,6 +75,8 @@ spec:
             {{- with .Values.extraApiArgs }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           ports:
           - name: http
             containerPort: 9099
