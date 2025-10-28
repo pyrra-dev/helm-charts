@@ -48,15 +48,15 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | nodeSelector | object | `{}` | node selector for scheduling server pod |
 | operatorMetricsAddress | string | `":8080"` | Address to expose operator metrics |
 | podAnnotations | object | `{}` | additional annotations for server pod |
-| podSecurityContext | object | `{}` | additional security context for server pod |
-| prometheusExternalUrl | string | `""` | url to public-facing prometheus UI in case it differs from prometheusUrl |
+| podSecurityContext | object | `{"runAsNonRoot":true,"seccompProfile":{"type":"RuntimeDefault"}}` | security context for pod |
+| prometheusExternalUrl | string | `""` | URL to public-facing prometheus UI in case it differs from prometheusUrl |
 | prometheusRule.enabled | bool | `false` | enables creation of PrometheusRules to monitor Pyrra |
 | prometheusRule.labels | object | `{}` | Set labels that will be applied on all PrometheusRules (alerts) |
 | prometheusRule.pyrraReconciliationError.severity | string | `"warning"` | Set severity for PyrraReconciliationError alert |
-| prometheusUrl | string | `"http://prometheus-operated.monitoring.svc.cluster.local:9090"` | url to prometheus instance with metrics |
+| prometheusUrl | string | `"http://prometheus-operated.monitoring.svc.cluster.local:9090"` | URL to prometheus instance with metrics |
 | resources | object | `{}` | resource limits and requests for server pod |
 | routePrefix | string | `""` | Must start with a slash and not end with a slash. |
-| securityContext | object | `{}` | additional security context for server |
+| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | security context for each container |
 | service.annotations | object | `{}` | Annotations to add to the service |
 | service.nodePort | string | `""` | node port for HTTP, choose port between <30000-32767> |
 | service.operatorMetricsPort | int | `8080` | service port for operator metrics |
