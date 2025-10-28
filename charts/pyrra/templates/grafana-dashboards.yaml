@@ -1,4 +1,4 @@
-{{- if .Values.dashboards.enabled }}
+{{- if .Values.dashboards.enabled -}}
 {{- $files := .Files.Glob "files/grafana-dashboards/*.json" }}
 {{- range $path, $fileContents := $files }}
 {{- $dashboardName := regexReplaceAll "(^.*/)(.*)\\.json$" $path "${2}" }}
@@ -23,4 +23,4 @@ metadata:
 data:
   {{ $dashboardName }}.json: {{ $.Files.Get $path | toJson }}
 {{- end }}
-{{- end }}
+{{- end -}}

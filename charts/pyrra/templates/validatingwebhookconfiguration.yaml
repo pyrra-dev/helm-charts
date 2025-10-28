@@ -1,4 +1,4 @@
-{{- if and .Values.validatingWebhookConfiguration.enabled ($.Capabilities.APIVersions.Has "cert-manager.io/v1") }}
+{{- if and .Values.validatingWebhookConfiguration.enabled ($.Capabilities.APIVersions.Has "cert-manager.io/v1") -}}
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
@@ -46,4 +46,4 @@ webhooks:
     resources:
     - servicelevelobjectives
   sideEffects: None
-{{- end }}
+{{- end -}}
