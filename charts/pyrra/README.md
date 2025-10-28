@@ -46,6 +46,8 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | ingress.tls | list | `[]` |  |
 | nameOverride | string | `""` | overrides chart name |
 | nodeSelector | object | `{}` | node selector for scheduling server pod |
+| operator | object | `{"resources":{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}}` | All settings related to the "operator" kubernetes container |
+| operator.resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | resource limits and requests |
 | operatorMetricsAddress | string | `":8080"` | Address to expose operator metrics |
 | podAnnotations | object | `{}` | additional annotations for server pod |
 | podSecurityContext | object | `{"runAsNonRoot":true,"seccompProfile":{"type":"RuntimeDefault"}}` | security context for pod |
@@ -54,7 +56,7 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | prometheusRule.labels | object | `{}` | Set labels that will be applied on all PrometheusRules (alerts) |
 | prometheusRule.pyrraReconciliationError.severity | string | `"warning"` | Set severity for PyrraReconciliationError alert |
 | prometheusUrl | string | `"http://prometheus-operated.monitoring.svc.cluster.local:9090"` | URL to prometheus instance with metrics |
-| resources | object | `{}` | resource limits and requests for server pod |
+| resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | resource limits and requests for server pod |
 | routePrefix | string | `""` | Must start with a slash and not end with a slash. |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | security context for each container |
 | service.annotations | object | `{}` | Annotations to add to the service |
