@@ -152,6 +152,8 @@ genericRules:
 validatingWebhookConfiguration:
   # -- enables admission webhook for server to validate SLOs, this requires cert-manager to be installed
   enabled: false
+  # -- 'Fail' or 'Ignore' are valid values
+  failurePolicy: Fail
 
 dashboards:
   # -- enables Grafana dashboards being deployed via configmap

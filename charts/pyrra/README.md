@@ -79,6 +79,7 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | serviceMonitorOperator.relabelings | list | `[]` | Set relabelings for the ServiceMonitor |
 | tolerations | object | `{}` | tolerations for scheduling server pod |
 | validatingWebhookConfiguration.enabled | bool | `false` | enables admission webhook for server to validate SLOs, this requires cert-manager to be installed |
+| validatingWebhookConfiguration.failurePolicy | string | `"Fail"` | 'Fail' or 'Ignore' are valid values |
 
 ## Upgrading
 

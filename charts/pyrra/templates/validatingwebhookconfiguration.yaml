@@ -33,7 +33,7 @@ webhooks:
       namespace: {{ .Release.Namespace }}
       path: /validate-pyrra-dev-v1alpha1-servicelevelobjective
       port: 9443
-  failurePolicy: Fail
+  failurePolicy: {{ .Values.validatingWebhookConfiguration.failurePolicy }}
   name: slo.pyrra.dev-servicelevelobjectives
   rules:
   - apiGroups:
