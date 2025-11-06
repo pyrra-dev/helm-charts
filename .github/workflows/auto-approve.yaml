@@ -1,0 +1,25 @@
+name: auto-approve-for-maintainers
+# This only exists as on GitHub it is not possible to self-approve a PR: https://github.com/orgs/community/discussions/6292
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to approve'
+        required: true
+        type: string
+
+jobs:
+  approve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Approve PR
+        run: |
+          gh pr review ${{ inputs.pr_number }} --approve
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
