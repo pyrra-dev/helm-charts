@@ -3,7 +3,7 @@
   "kind": "CustomResourceDefinition",
   "metadata": {
     "annotations": {
-      "controller-gen.kubebuilder.io/version": "v0.14.0"
+      "controller-gen.kubebuilder.io/version": "v0.18.0"
     },
     "name": "servicelevelobjectives.pyrra.dev"
   },
@@ -99,7 +99,7 @@
                         "description": "BoolGauge is the indicator that measures whether a boolean gauge is\nsuccessful.",
                         "properties": {
                           "grouping": {
-                            "description": "Total is the metric that returns how many requests there are in total.",
+                            "description": "Grouping allows an SLO to be defined for many SLI at once, like HTTP handlers for example.",
                             "items": {
                               "type": "string"
                             },
@@ -231,6 +231,16 @@
                       }
                     },
                     "type": "object"
+                  },
+                  "partial_response_strategy": {
+                    "default": "abort",
+                    "description": "PartialResponseStrategy is only used by ThanosRuler and will\nbe ignored by Prometheus instances.\nMore info: https://github.com/thanos-io/thanos/blob/main/docs/components/rule.md#partial-response",
+                    "enum": [
+                      "abort",
+                      "warn",
+                      ""
+                    ],
+                    "type": "string"
                   },
                   "target": {
                     "description": "Target is a string that's casted to a float64 between 0 - 100.\nIt represents the desired availability of the service in the given window.\nfloat64 are not supported: https://github.com/kubernetes-sigs/controller-tools/issues/245",
