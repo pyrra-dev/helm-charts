@@ -2,13 +2,13 @@
 
 ## Usage
 
-```
+```bash
 helm repo add pyrra https://pyrra-dev.github.io/helm-charts
 ```
 
-Each chart documentation is available in the [charts directory](https://github.com/pyrra-dev/helm-charts/charts/).
+Each chart documentation is available in the [charts directory](https://github.com/pyrra-dev/helm-charts/tree/main/charts/).
 
 ## Contributing
 
-If you changed the Helm values, please run [helm-docs](https://github.com/norwoodj/helm-docs) in charts/pyrra folder to re-generate the README accordingly.
+If you changed the Helm values, please run [helm-docs](https://github.com/norwoodj/helm-docs) in charts/pyrra folder to re-generate the readme accordingly.
 Alternativly you can use the provided [pre-commit](https://pre-commit.com/) hooks.
