@@ -33,6 +33,7 @@ extraApiVolumeMounts: []
   #   mountPath: /example
 
 # -- Address to expose operator metrics
+
 operatorMetricsAddress: ":8080"
 
 serviceAccount:
