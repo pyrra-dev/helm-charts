@@ -20,7 +20,19 @@ additionalLabels: {}
 extraApiArgs: []
 # -- Extra args for Pyrra's Kubernetes container
 extraKubernetesArgs: []
+
+# -- Extra Volumes for the pod
+extraVolumes: []
+  # - name: example
+  #   configMap:
+  #     name: example
+
+# -- Extra Volume Mounts for the container
+extraVolumeMounts: []
+  # - name: example
+  #   mountPath: /example
 # -- Address to expose operator metrics
+
 operatorMetricsAddress: ":8080"
 
 serviceAccount:
