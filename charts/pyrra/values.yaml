@@ -22,13 +22,13 @@ extraApiArgs: []
 extraKubernetesArgs: []
 
 # -- Extra Volumes for the pod
-extraVolumes: []
+extraApiVolumes: []
   # - name: example
   #   configMap:
   #     name: example
 
 # -- Extra Volume Mounts for the container
-extraVolumeMounts: []
+extraApiVolumeMounts: []
   # - name: example
   #   mountPath: /example
 # -- Address to expose operator metrics
