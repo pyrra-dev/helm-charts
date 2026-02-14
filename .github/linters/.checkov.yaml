@@ -1,0 +1,6 @@
+# https://github.com/bridgecrewio/checkov?tab=readme-ov-file#configuration-using-a-config-file
+skip-check:
+  - CKV_K8S_11 # you don't want to set CPU limits by default...
+  - CKV_K8S_15 # Image Pull Policy should definitely not be Always
+  - CKV_K8S_21 # for tests, the namespace will always be "default"
+  - CKV_K8S_43 # digest should not be set by default in chart
