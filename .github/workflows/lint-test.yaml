@@ -14,13 +14,13 @@ jobs:
     strategy:
       matrix:
         k8s-version:
-          # renovate: datasource=docker depName=kindest/node
+          # renovate: docker=kindest/node
           - "kindest/node:v1.32.8"
-          # renovate: datasource=docker depName=kindest/node
+          # renovate: docker=kindest/node
           - "kindest/node:v1.33.4"
-          # renovate: datasource=docker depName=kindest/node
+          # renovate: docker=kindest/node
           - "kindest/node:v1.34.0"
-          # renovate: datasource=docker depName=kindest/node
+          # renovate: docker=kindest/node
           - "kindest/node:v1.35.0"
     steps:
       - name: Checkout
@@ -37,7 +37,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: '3.13'
+          # renovate: github=python/cpython
+          python-version: '3.13.12'
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
