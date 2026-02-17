@@ -16,6 +16,11 @@
     },
     {
       matchPackageNames: ['kindest/node'],
+      matchUpdateTypes: ['major', 'minor'],
+      enabled: false,
+    },
+    {
+      matchPackageNames: ['kindest/node'],
       matchUpdateTypes: ['patch'],
       automerge: true,
     },
