@@ -5,4 +5,19 @@
     'config:recommended',
     'github>prometheus-community/helm-charts//renovate.json',
   ],
+  packageRules: [
+    {
+      matchManagers: ['github-actions'],
+      automerge: true,
+    },
+    {
+      matchPackageNames: ['helm/helm', 'helm/chart-testing', 'python/cpython'],
+      automerge: true,
+    },
+    {
+      matchPackageNames: ['kindest/node'],
+      matchUpdateTypes: ['patch'],
+      automerge: true,
+    },
+  ],
 }
