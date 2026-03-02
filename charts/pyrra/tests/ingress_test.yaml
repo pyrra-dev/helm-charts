@@ -1,0 +1,39 @@
+suite: ingress
+templates:
+  - templates/ingress.yaml
+tests:
+  - it: should not render an Ingress by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render an Ingress when enabled
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - equal:
+          path: spec.rules[0].host
+          value: pyrra.example.com
+
+  - it: should set ingressClassName when provided
+    set:
+      ingress.enabled: true
+      ingress.className: nginx
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: nginx

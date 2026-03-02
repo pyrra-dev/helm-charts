@@ -1,0 +1,42 @@
+suite: prometheusrule
+templates:
+  - templates/prometheusrule.yaml
+tests:
+  - it: should not render a PrometheusRule by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render a PrometheusRule when enabled
+    set:
+      prometheusRule.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: PrometheusRule
+
+  - it: should include the PyrraReconciliationError alert
+    set:
+      prometheusRule.enabled: true
+    asserts:
+      - equal:
+          path: spec.groups[0].rules[0].alert
+          value: PyrraReconciliationError
+
+  - it: should use the default warning severity
+    set:
+      prometheusRule.enabled: true
+    asserts:
+      - equal:
+          path: spec.groups[0].rules[0].labels.severity
+          value: warning
+
+  - it: should use a custom severity when set
+    set:
+      prometheusRule.enabled: true
+      prometheusRule.pyrraReconciliationError.severity: critical
+    asserts:
+      - equal:
+          path: spec.groups[0].rules[0].labels.severity
+          value: critical
