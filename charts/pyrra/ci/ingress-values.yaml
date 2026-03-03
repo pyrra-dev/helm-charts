@@ -1,0 +1,12 @@
+ingress:
+  enabled: true
+  className: ingress-nginx
+  hosts:
+    - host: pyrra.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: pyrra-tls
+      hosts:
+        - pyrra.example.com
