@@ -41,6 +41,8 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | dashboards.labelValue | string | `"1"` | default value from the Grafana chart |
 | dashboards.namespace | string | `nil` |  |
 | extraApiArgs | list | `[]` | Extra args for Pyrra's API container |
+| extraApiVolumeMounts | list | `[]` | Extra Volume Mounts for the container |
+| extraApiVolumes | list | `[]` | Extra Volumes for the pod |
 | extraKubernetesArgs | list | `[]` | Extra args for Pyrra's Kubernetes container |
 | fullnameOverride | string | `""` | Overrides helm-generated chart fullname |
 | genericRules.enabled | bool | `false` | enables generate Pyrra generic recording rules. Pyrra generates metrics with the same name for each SLO. |
