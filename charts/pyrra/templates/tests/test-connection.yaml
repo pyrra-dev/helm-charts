@@ -10,13 +10,19 @@ metadata:
 spec:
   containers:
     - name: wget
-      image: busybox:1.37
+      image: docker.io/busybox:1.37
       command: ['wget']
       {{- if .Values.routePrefix }}
       args: ['-O-', '{{ include "pyrra.fullname" . }}:{{ .Values.service.port }}{{ .Values.routePrefix }}']
       {{- else }}
       args: ['-O-', '{{ include "pyrra.fullname" . }}:{{ .Values.service.port }}']
       {{- end }}
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          memory: 64Mi
       securityContext:
         readOnlyRootFilesystem: true
         allowPrivilegeEscalation: false
