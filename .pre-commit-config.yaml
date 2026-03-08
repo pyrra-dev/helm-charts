@@ -1,5 +1,6 @@
 repos:
   - repo: https://github.com/norwoodj/helm-docs
+    # renovate: github=norwoodj/helm-docs
     rev: v1.14.2
     hooks:
       - id: helm-docs-container
