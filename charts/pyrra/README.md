@@ -6,15 +6,26 @@ SLO manager and alert generator
 
 * <https://github.com/pyrra-dev/pyrra>
 
+## Install
+
+```bash
+helm repo add pyrra https://pyrra-dev.github.io/helm-charts
+helm repo update
+helm install pyrra pyrra/pyrra
+```
+
 ## Prometheus settings
+
 Pyrra needs prometheus to work. You will need to specify that via prometheusUrl variable - default assumes you have default [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) deployed to "monitoring" namespace.
-Additionaly, you (most likely) will need to specify prometheusExternalUrl with URL to public-facing prometheus UI (ingress or whatever you're using), otherwise pyrra links to graphs will be broken
+Additionally, you (most likely) will need to specify prometheusExternalUrl with URL to public-facing prometheus UI (ingress or whatever you're using), otherwise pyrra links to graphs will be broken
 
 ## Webhook Admissions Controller Validations (Optional)
+
 Pyrra can be configured to validate SLOs and SLO groups using a webhook admission controller. This is an optional feature that can be enabled by setting the `validatingWebhookConfiguration.enabled` value to `true`. The webhook admission controller will validate SLOs when they are created or updated.
 If the SLO object is invalid, the admission controller will reject the request and provide a reason for the failure. This requires cert-manager to be installed in the cluster. If cert-manager is not installed, the webhook admission controller will not be created.
 
 ## Grafana dashboards
+
 Pyrra provides Grafana dashboards additionally to it's own UI.
 The dashboards can be deployed using a ConfigMap and get's automatically [reloaded by a Grafana sidecar](https://github.com/grafana/helm-charts/tree/main/charts/grafana#sidecar-for-dashboards).
 
