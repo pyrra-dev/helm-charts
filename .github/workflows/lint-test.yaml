@@ -29,11 +29,43 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Run helm-unittest
+        # helm-unittest does not support Helm v4 yet, so this step uses v3
+        # https://github.com/helm-unittest/helm-unittest/issues/777
+        uses: d3adb5/helm-unittest-action@850bc76597579183998069830d5fa8c3ef0ea34a # v2.5.0
+        with:
+          charts: charts/pyrra
+          helm-version: v3.20.0
+          # renovate: github=helm-unittest/helm-unittest
+          unittest-version: v1.0.3
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set up Helm
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           # renovate: github=helm/helm
           version: v4.1.1
+
+      - name: Set up kubeconform
+        run: |
+          # renovate: github=yannh/kubeconform
+          KUBECONFORM_VERSION=v0.7.0
+          curl -sSLo kubeconform.tar.gz \
+            "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          tar -xf kubeconform.tar.gz kubeconform
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Run kubeconform
+        run: |
+          K8S_VERSION=$(echo "${{ matrix.k8s-version }}" | sed 's|kindest/node:v||')
+          for values_file in charts/pyrra/ci/*.yaml; do
+            helm template pyrra charts/pyrra -f "$values_file" | kubeconform \
+              -kubernetes-version "$K8S_VERSION" \
+              -strict \
+              -summary \
+              -schema-location default \
+              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+          done
 
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0

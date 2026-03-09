@@ -1,0 +1,49 @@
+suite: deployment
+templates:
+  - templates/deployment.yaml
+tests:
+  - it: should render one Deployment by default
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Deployment
+
+  - it: should have two containers
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: pyrra-kubernetes
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: pyrra
+
+  - it: should not include --generic-rules arg by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --generic-rules
+
+  - it: should include --generic-rules arg when genericRules is enabled
+    set:
+      genericRules.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --generic-rules
+
+  - it: should include --route-prefix arg when routePrefix is set
+    set:
+      routePrefix: /slo
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --route-prefix=/slo
+
+  - it: should include --prometheus-external-url arg when prometheusExternalUrl is set
+    set:
+      prometheusExternalUrl: https://prometheus.example.com
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --prometheus-external-url=https://prometheus.example.com

@@ -1,0 +1,25 @@
+suite: grafana-dashboards
+templates:
+  - templates/grafana-dashboards.yaml
+tests:
+  - it: should not render dashboards by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render two ConfigMaps when enabled
+    set:
+      dashboards.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should set the Grafana dashboard label when enabled
+    set:
+      dashboards.enabled: true
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - isNotNullOrEmpty:
+          path: metadata.labels.grafana_dashboard
