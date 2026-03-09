@@ -1,8 +1,8 @@
 apiVersion: v2
 name: pyrra
 # renovate: github=pyrra-dev/pyrra
-appVersion: v0.9.3
-version: 1.0.0
+appVersion: v0.9.4
+version: 1.0.1
 description: SLO manager and alert generator
 sources:
   - https://github.com/pyrra-dev/pyrra
