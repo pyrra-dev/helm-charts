@@ -47,3 +47,27 @@ tests:
       - contains:
           path: spec.template.spec.containers[1].args
           content: --prometheus-external-url=https://prometheus.example.com
+
+  - it: should add extra api volumes
+    set:
+      extraApiVolumes:
+        - name: test-volume
+          emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: test-volume
+            emptyDir: {}
+
+  - it: should add extra api volume mounts
+    set:
+      extraApiVolumeMounts:
+        - name: test-volume
+          mountPath: /test
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: test-volume
+            mountPath: /test
