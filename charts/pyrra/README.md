@@ -57,6 +57,12 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | ingress.tls | list | `[]` |  |
 | nameOverride | string | `""` | overrides chart name |
 | nodeSelector | object | `{}` | node selector for scheduling server pod |
+| openshift.isOpenshift | bool | `false` | enables common OpenShift support |
+| openshift.openshiftOauth.enabled | bool | `false` | enables OpenShift OAuth-proxy |
+| openshift.openshiftOauth.openshiftOauthProxyImage | string | `"openshift/oauth-proxy:latest"` | OpenShift OAuth-proxy image |
+| openshift.openshiftOauth.sessionSecret | string | `""` | SessionSecret for OpenShift OAuth-proxy, string |
+| openshift.openshiftRoute.enabled | bool | `false` | enables creation of OpenShift route |
+| openshift.openshiftRoute.subdomain | string | `"pyrra"` | set application subdomain name within cluster domain |
 | operator | object | `{"resources":{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}}` | All settings related to the "operator" kubernetes container |
 | operator.resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | resource limits and requests |
 | operatorMetricsAddress | string | `":8080"` | Address to expose operator metrics |
