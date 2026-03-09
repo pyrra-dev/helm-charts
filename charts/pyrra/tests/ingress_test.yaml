@@ -20,9 +20,31 @@ tests:
           count: 1
       - isKind:
           of: Ingress
+
+  - it: should set the name to the fullname
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
       - equal:
-          path: spec.rules[0].host
-          value: pyrra.example.com
+          path: metadata.name
+          value: RELEASE-NAME-pyrra
+
+  - it: should set common labels
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
+      - isNotNullOrEmpty:
+          path: metadata.labels
 
   - it: should set ingressClassName when provided
     set:
@@ -37,3 +59,203 @@ tests:
       - equal:
           path: spec.ingressClassName
           value: nginx
+
+  - it: should not set ingressClassName when empty
+    set:
+      ingress.enabled: true
+      ingress.className: ""
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
+      - isNull:
+          path: spec.ingressClassName
+
+  - it: should set annotations when provided
+    set:
+      ingress.enabled: true
+      ingress.annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /
+        cert-manager.io/cluster-issuer: letsencrypt
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/rewrite-target"]
+          value: /
+      - equal:
+          path: metadata.annotations["cert-manager.io/cluster-issuer"]
+          value: letsencrypt
+
+  - it: should not set annotations when not provided
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
+      - isNull:
+          path: metadata.annotations
+
+  - it: should set the host
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: pyrra.example.com
+
+  - it: should set the path and pathType
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /metrics
+              pathType: Prefix
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /metrics
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: Prefix
+
+  - it: should set multiple paths per host
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+            - path: /api
+              pathType: Prefix
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /
+      - equal:
+          path: spec.rules[0].http.paths[1].path
+          value: /api
+      - equal:
+          path: spec.rules[0].http.paths[1].pathType
+          value: Prefix
+
+  - it: should set multiple hosts
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+        - host: pyrra-internal.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: pyrra.example.com
+      - equal:
+          path: spec.rules[1].host
+          value: pyrra-internal.example.com
+
+  - it: should set the backend service name to the fullname
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.name
+          value: RELEASE-NAME-pyrra
+
+  - it: should set the backend service port
+    set:
+      ingress.enabled: true
+      service.port: 9099
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.number
+          value: 9099
+
+  - it: should configure TLS when provided
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+      ingress.tls:
+        - secretName: pyrra-tls
+          hosts:
+            - pyrra.example.com
+    asserts:
+      - equal:
+          path: spec.tls[0].secretName
+          value: pyrra-tls
+      - equal:
+          path: spec.tls[0].hosts[0]
+          value: pyrra.example.com
+
+  - it: should configure multiple TLS entries
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+        - host: pyrra-internal.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+      ingress.tls:
+        - secretName: pyrra-tls
+          hosts:
+            - pyrra.example.com
+        - secretName: pyrra-internal-tls
+          hosts:
+            - pyrra-internal.example.com
+    asserts:
+      - equal:
+          path: spec.tls[0].secretName
+          value: pyrra-tls
+      - equal:
+          path: spec.tls[1].secretName
+          value: pyrra-internal-tls
+
+  - it: should not configure TLS when not provided
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: pyrra.example.com
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    asserts:
+      - isNull:
+          path: spec.tls
