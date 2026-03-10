@@ -80,12 +80,8 @@ spec:
           ports:
           - name: http
             containerPort: 9099
-          {{- if or .Values.extraApiVolumeMounts (and .Values.validatingWebhookConfiguration.enabled ($.Capabilities.APIVersions.Has "cert-manager.io/v1")) }}
+          {{- if .Values.extraApiVolumeMounts }}
           volumeMounts:
-            {{- if and .Values.validatingWebhookConfiguration.enabled ($.Capabilities.APIVersions.Has "cert-manager.io/v1") }}
-            - mountPath: /tmp/k8s-webhook-server/serving-certs
-              name: certs
-            {{- end }}
             {{- with .Values.extraApiVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
