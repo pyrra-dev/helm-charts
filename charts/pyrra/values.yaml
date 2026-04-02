@@ -4,6 +4,8 @@ imagePullSecrets: []
 nameOverride: ""
 # -- Overrides helm-generated chart fullname
 fullnameOverride: ""
+# -- Overrides the namespace for all resources (defaults to .Release.Namespace)
+namespaceOverride: ""
 
 image:
   # -- Overrides the image repository
