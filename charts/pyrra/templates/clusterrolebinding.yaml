@@ -12,4 +12,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: {{ include "pyrra.serviceAccountName" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "pyrra.namespace" . }}
