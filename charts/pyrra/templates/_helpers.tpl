@@ -66,6 +66,13 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Namespace to deploy resources into.
+*/}}
+{{- define "pyrra.namespace" -}}
+{{- default .Release.Namespace .Values.namespaceOverride }}
+{{- end }}
+
+{{/*
 Operator metrics port
 */}}
 {{- define "pyrra.operatorMetricsPort" -}}
