@@ -70,6 +70,19 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | prometheusRule.pyrraReconciliationError.severity | string | `"warning"` | Set severity for PyrraReconciliationError alert |
 | prometheusUrl | string | `"http://prometheus-operated.monitoring.svc.cluster.local:9090"` | URL to prometheus instance with metrics |
 | resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | resource limits and requests for server pod |
+| route | object | `{"main":{"additionalRules":[],"annotations":{},"apiVersion":"gateway.networking.k8s.io/v1","enabled":false,"filters":[],"hostnames":[],"httpsRedirect":false,"kind":"HTTPRoute","labels":{},"matches":[{"path":{"type":"PathPrefix","value":"/"}}],"parentRefs":[],"timeouts":{}}}` | Gateway API HTTPRoute configuration. Supports multiple named routes. |
+| route.main.additionalRules | list | `[]` | additional custom rules prepended to the route rules |
+| route.main.annotations | object | `{}` | additional annotations for the route |
+| route.main.apiVersion | string | `"gateway.networking.k8s.io/v1"` | Gateway API version |
+| route.main.enabled | bool | `false` | enables HTTPRoute for server UI |
+| route.main.filters | list | `[]` | request/response filter configuration |
+| route.main.hostnames | list | `[]` | hostnames to match for this route |
+| route.main.httpsRedirect | bool | `false` | redirect all traffic to HTTPS (301) |
+| route.main.kind | string | `"HTTPRoute"` | Route kind (HTTPRoute or GRPCRoute) |
+| route.main.labels | object | `{}` | additional labels for the route |
+| route.main.matches | list | `[{"path":{"type":"PathPrefix","value":"/"}}]` | path/header match conditions |
+| route.main.parentRefs | list | `[]` | parentRefs defines which Gateways this route attaches to |
+| route.main.timeouts | object | `{}` | timeout configuration |
 | routePrefix | string | `""` | Must start with a slash and not end with a slash. |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | security context for each container |
 | service.annotations | object | `{}` | Annotations to add to the service |
