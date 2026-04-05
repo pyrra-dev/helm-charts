@@ -14,15 +14,15 @@ jobs:
     strategy:
       matrix:
         # major and minor need manual adjustments
-        k8s-version:
+        include:
           # renovate: docker=kindest/node
-          - "v1.32.8"
+          - k8s-version: v1.32.8
           # renovate: docker=kindest/node
-          - "v1.33.4"
+          - k8s-version: v1.33.4
           # renovate: docker=kindest/node
-          - "v1.34.0"
+          - k8s-version: v1.34.0
           # renovate: docker=kindest/node
-          - "v1.35.1"
+          - k8s-version: v1.35.1
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
