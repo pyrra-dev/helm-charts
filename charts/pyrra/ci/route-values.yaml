@@ -1,0 +1,20 @@
+route:
+  main:
+    enabled: true
+    parentRefs:
+      - name: my-gateway
+        namespace: infra
+    hostnames:
+      - pyrra.example.com
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+  redirect:
+    enabled: true
+    parentRefs:
+      - name: my-gateway
+        namespace: infra
+    hostnames:
+      - pyrra.example.com
+    httpsRedirect: true

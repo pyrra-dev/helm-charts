@@ -1,0 +1,313 @@
+suite: route
+templates:
+  - templates/route.yaml
+tests:
+  - it: should not render any HTTPRoute by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render an HTTPRoute when enabled
+    set:
+      route.main.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HTTPRoute
+
+  - it: should use gateway.networking.k8s.io/v1 as default apiVersion
+    set:
+      route.main.enabled: true
+    asserts:
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1
+
+  - it: should allow overriding apiVersion
+    set:
+      route.main.enabled: true
+      route.main.apiVersion: gateway.networking.k8s.io/v1beta1
+    asserts:
+      - equal:
+          path: apiVersion
+          value: gateway.networking.k8s.io/v1beta1
+
+  - it: should allow overriding kind
+    set:
+      route.main.enabled: true
+      route.main.kind: GRPCRoute
+    asserts:
+      - isKind:
+          of: GRPCRoute
+
+  - it: should set name to fullname for the main route
+    set:
+      route.main.enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-pyrra
+
+  - it: should append the route name as suffix for non-main routes
+    set:
+      route.redirect.enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-pyrra-redirect
+
+  - it: should set the namespace to the release namespace
+    set:
+      route.main.enabled: true
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+
+  - it: should respect namespaceOverride
+    set:
+      route.main.enabled: true
+      namespaceOverride: custom-ns
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: custom-ns
+
+  - it: should set common labels
+    set:
+      route.main.enabled: true
+    asserts:
+      - isNotNullOrEmpty:
+          path: metadata.labels
+
+  - it: should set additional labels when provided
+    set:
+      route.main.enabled: true
+      route.main.labels:
+        environment: production
+    asserts:
+      - equal:
+          path: metadata.labels.environment
+          value: production
+
+  - it: should set annotations when provided
+    set:
+      route.main.enabled: true
+      route.main.annotations:
+        external-dns.alpha.kubernetes.io/hostname: pyrra.example.com
+    asserts:
+      - equal:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/hostname"]
+          value: pyrra.example.com
+
+  - it: should not set annotations when not provided
+    set:
+      route.main.enabled: true
+    asserts:
+      - isNull:
+          path: metadata.annotations
+
+  - it: should set parentRefs when provided
+    set:
+      route.main.enabled: true
+      route.main.parentRefs:
+        - name: my-gateway
+          namespace: infra
+    asserts:
+      - equal:
+          path: spec.parentRefs[0].name
+          value: my-gateway
+      - equal:
+          path: spec.parentRefs[0].namespace
+          value: infra
+
+  - it: should not set parentRefs when empty
+    set:
+      route.main.enabled: true
+    asserts:
+      - isNull:
+          path: spec.parentRefs
+
+  - it: should set hostnames when provided
+    set:
+      route.main.enabled: true
+      route.main.hostnames:
+        - pyrra.example.com
+    asserts:
+      - equal:
+          path: spec.hostnames[0]
+          value: pyrra.example.com
+
+  - it: should not set hostnames when empty
+    set:
+      route.main.enabled: true
+    asserts:
+      - isNull:
+          path: spec.hostnames
+
+  - it: should set the backend service name to the fullname
+    set:
+      route.main.enabled: true
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: RELEASE-NAME-pyrra
+
+  - it: should set the backend service port from service.port
+    set:
+      route.main.enabled: true
+      service.port: 9099
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].port
+          value: 9099
+
+  - it: should set backendRef kind to Service
+    set:
+      route.main.enabled: true
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].kind
+          value: Service
+
+  - it: should set backendRef weight to 1
+    set:
+      route.main.enabled: true
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].weight
+          value: 1
+
+  - it: should include default PathPrefix match
+    set:
+      route.main.enabled: true
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].path.type
+          value: PathPrefix
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /
+
+  - it: should set custom matches when provided
+    set:
+      route.main.enabled: true
+      route.main.matches:
+        - path:
+            type: Exact
+            value: /api
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].path.type
+          value: Exact
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /api
+
+  - it: should not set matches when empty
+    set:
+      route.main.enabled: true
+      route.main.matches: []
+    asserts:
+      - isNull:
+          path: spec.rules[0].matches
+
+  - it: should set filters when provided
+    set:
+      route.main.enabled: true
+      route.main.filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            add:
+              - name: X-Custom-Header
+                value: pyrra
+    asserts:
+      - equal:
+          path: spec.rules[0].filters[0].type
+          value: RequestHeaderModifier
+
+  - it: should not set filters when empty
+    set:
+      route.main.enabled: true
+    asserts:
+      - isNull:
+          path: spec.rules[0].filters
+
+  - it: should set timeouts when provided
+    set:
+      route.main.enabled: true
+      route.main.timeouts:
+        request: 30s
+    asserts:
+      - equal:
+          path: spec.rules[0].timeouts.request
+          value: 30s
+
+  - it: should not set timeouts when empty
+    set:
+      route.main.enabled: true
+    asserts:
+      - isNull:
+          path: spec.rules[0].timeouts
+
+  - it: should render an HTTPS redirect rule when httpsRedirect is true
+    set:
+      route.main.enabled: true
+      route.main.httpsRedirect: true
+    asserts:
+      - equal:
+          path: spec.rules[0].filters[0].type
+          value: RequestRedirect
+      - equal:
+          path: spec.rules[0].filters[0].requestRedirect.scheme
+          value: https
+      - equal:
+          path: spec.rules[0].filters[0].requestRedirect.statusCode
+          value: 301
+
+  - it: should not include backendRefs when httpsRedirect is true
+    set:
+      route.main.enabled: true
+      route.main.httpsRedirect: true
+    asserts:
+      - isNull:
+          path: spec.rules[0].backendRefs
+
+  - it: should prepend additionalRules before the main rule
+    set:
+      route.main.enabled: true
+      route.main.additionalRules:
+        - backendRefs:
+            - name: other-service
+              port: 8080
+              kind: Service
+              group: ''
+              weight: 1
+          matches:
+            - path:
+                type: PathPrefix
+                value: /other
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: other-service
+      - equal:
+          path: spec.rules[1].backendRefs[0].name
+          value: RELEASE-NAME-pyrra
+
+  - it: should render two HTTPRoutes when two routes are enabled
+    set:
+      route.main.enabled: true
+      route.redirect.enabled: true
+      route.redirect.httpsRedirect: true
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should not render a disabled route
+    set:
+      route.main.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
