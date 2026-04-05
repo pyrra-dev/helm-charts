@@ -16,6 +16,10 @@
     },
     {
       matchPackageNames: ['kindest/node'],
+      separateMultipleMinor: true,
+    },
+    {
+      matchPackageNames: ['kindest/node'],
       matchUpdateTypes: ['major', 'minor'],
       enabled: false,
     },
