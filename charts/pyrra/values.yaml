@@ -104,6 +104,37 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
+# -- Gateway API HTTPRoute configuration. Supports multiple named routes.
+route:
+  main:
+    # -- enables HTTPRoute for server UI
+    enabled: false
+    # -- Gateway API version
+    apiVersion: gateway.networking.k8s.io/v1
+    # -- Route kind (HTTPRoute or GRPCRoute)
+    kind: HTTPRoute
+    # -- additional annotations for the route
+    annotations: {}
+    # -- additional labels for the route
+    labels: {}
+    # -- hostnames to match for this route
+    hostnames: []
+    # -- parentRefs defines which Gateways this route attaches to
+    parentRefs: []
+    # -- path/header match conditions
+    matches:
+      - path:
+          type: PathPrefix
+          value: /
+    # -- request/response filter configuration
+    filters: []
+    # -- timeout configuration
+    timeouts: {}
+    # -- additional custom rules prepended to the route rules
+    additionalRules: []
+    # -- redirect all traffic to HTTPS (301)
+    httpsRedirect: false
+
 # -- resource limits and requests for server pod
 resources:
   limits:
