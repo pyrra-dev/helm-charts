@@ -4,6 +4,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "pyrra.fullname" . }}
+  namespace: {{ include "pyrra.namespace" . }}
   labels:
     {{- include "pyrra.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}

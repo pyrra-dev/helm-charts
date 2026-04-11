@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "pyrra.fullname" . }}
+  namespace: {{ include "pyrra.namespace" . }}
   labels:
     {{- include "pyrra.labels" . | nindent 4 }}
 spec:
@@ -41,6 +42,10 @@ spec:
             {{- end }}
             {{- if .Values.operatorMetricsAddress }}
             - --metrics-addr={{ .Values.operatorMetricsAddress }}
+            {{- end }}
+            {{- if .Values.operator.leaderElection.enabled }}
+            - --enable-leader-election
+            - --leader-election-namespace={{ .Values.operator.leaderElection.namespace | default (include "pyrra.namespace" .) }}
             {{- end }}
             {{- with .Values.extraKubernetesArgs }}
             {{- toYaml . | nindent 12 }}

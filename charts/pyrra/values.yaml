@@ -152,6 +152,11 @@ operator:
     requests:
       cpu: 10m
       memory: 128Mi
+  leaderElection:
+    # -- enables leader election for the operator (required when running multiple replicas)
+    enabled: true
+    # -- namespace where the leader election lease resource will be created (defaults to release namespace)
+    namespace: ""
 
 # -- node selector for scheduling server pod
 nodeSelector: {}

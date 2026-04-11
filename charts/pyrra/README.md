@@ -60,7 +60,9 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | nameOverride | string | `""` | overrides chart name |
 | namespaceOverride | string | `""` | Overrides the namespace for all resources (defaults to .Release.Namespace) |
 | nodeSelector | object | `{}` | node selector for scheduling server pod |
-| operator | object | `{"resources":{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}}` | All settings related to the "operator" kubernetes container |
+| operator | object | `{"leaderElection":{"enabled":true,"namespace":""},"resources":{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}}` | All settings related to the "operator" kubernetes container |
+| operator.leaderElection.enabled | bool | `true` | enables leader election for the operator (required when running multiple replicas) |
+| operator.leaderElection.namespace | string | `""` | namespace where the leader election lease resource will be created (defaults to release namespace) |
 | operator.resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | resource limits and requests |
 | operatorMetricsAddress | string | `":8080"` | Address to expose operator metrics |
 | podAnnotations | object | `{}` | additional annotations for server pod |
