@@ -1,0 +1,48 @@
+suite: clusterrole
+templates:
+  - templates/clusterrole.yaml
+tests:
+  - it: should render one ClusterRole by default
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ClusterRole
+
+  - it: should include leases rule when leaderElection is enabled
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - coordination.k8s.io
+            resources:
+              - leases
+            verbs:
+              - create
+              - delete
+              - get
+              - list
+              - patch
+              - update
+              - watch
+
+  - it: should not include leases rule when leaderElection is disabled
+    set:
+      operator.leaderElection.enabled: false
+    asserts:
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - coordination.k8s.io
+            resources:
+              - leases
+            verbs:
+              - create
+              - delete
+              - get
+              - list
+              - patch
+              - update
+              - watch

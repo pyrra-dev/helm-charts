@@ -71,3 +71,33 @@ tests:
           content:
             name: test-volume
             mountPath: /test
+
+  - it: should include --enable-leader-election arg by default
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --enable-leader-election
+
+  - it: should include --leader-election-namespace arg with release namespace by default
+    release:
+      namespace: observability
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --leader-election-namespace=observability
+
+  - it: should not include --enable-leader-election arg when leaderElection is disabled
+    set:
+      operator.leaderElection.enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --enable-leader-election
+
+  - it: should use custom namespace for leader election when set
+    set:
+      operator.leaderElection.namespace: monitoring
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --leader-election-namespace=monitoring

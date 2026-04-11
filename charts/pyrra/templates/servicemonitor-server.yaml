@@ -4,6 +4,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ template "pyrra.fullname" . }}-server
+  namespace: {{ include "pyrra.namespace" . }}
   labels:
     {{- include "pyrra.labels" . | nindent 4 }}
     {{- if .Values.serviceMonitor.labels }}
