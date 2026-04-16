@@ -15,6 +15,7 @@ image:
   # -- Overrides the image tag
   tag: ""
 
+# -- Extra labels to add to the deploymentSpec and podSpec
 additionalLabels: {}
   # app: pyrra
 
