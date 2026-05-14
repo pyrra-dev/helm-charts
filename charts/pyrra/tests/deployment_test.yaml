@@ -101,3 +101,42 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].args
           content: --leader-election-namespace=monitoring
+
+  - it: should not render resizePolicy by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].resizePolicy
+      - notExists:
+          path: spec.template.spec.containers[1].resizePolicy
+
+  - it: should render resizePolicy for server container when set
+    set:
+      resizePolicy:
+        - resourceName: cpu
+          restartPolicy: NotRequired
+        - resourceName: memory
+          restartPolicy: RestartContainer
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].resizePolicy
+          value:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: RestartContainer
+      - notExists:
+          path: spec.template.spec.containers[0].resizePolicy
+
+  - it: should render resizePolicy for operator container when set
+    set:
+      operator.resizePolicy:
+        - resourceName: cpu
+          restartPolicy: NotRequired
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resizePolicy
+          value:
+            - resourceName: cpu
+              restartPolicy: NotRequired
+      - notExists:
+          path: spec.template.spec.containers[1].resizePolicy

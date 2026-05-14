@@ -143,6 +143,13 @@ resources:
     cpu: 10m
     memory: 128Mi
 
+# -- resize policy for the server container (requires Kubernetes 1.27+ with InPlacePodVerticalScaling feature gate)
+resizePolicy: []
+  # - resourceName: cpu
+  #   restartPolicy: NotRequired
+  # - resourceName: memory
+  #   restartPolicy: RestartContainer
+
 # -- All settings related to the "operator" kubernetes container
 operator:
   # -- resource limits and requests
@@ -152,6 +159,12 @@ operator:
     requests:
       cpu: 10m
       memory: 128Mi
+  # -- resize policy for the operator container (requires Kubernetes 1.27+ with InPlacePodVerticalScaling feature gate)
+  resizePolicy: []
+    # - resourceName: cpu
+    #   restartPolicy: NotRequired
+    # - resourceName: memory
+    #   restartPolicy: RestartContainer
   leaderElection:
     # -- enables leader election for the operator (required when running multiple replicas)
     enabled: true
