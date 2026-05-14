@@ -60,9 +60,10 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | nameOverride | string | `""` | overrides chart name |
 | namespaceOverride | string | `""` | Overrides the namespace for all resources (defaults to .Release.Namespace) |
 | nodeSelector | object | `{}` | node selector for scheduling server pod |
-| operator | object | `{"leaderElection":{"enabled":true,"namespace":""},"resources":{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}}` | All settings related to the "operator" kubernetes container |
+| operator | object | `{"leaderElection":{"enabled":true,"namespace":""},"resizePolicy":[],"resources":{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}}` | All settings related to the "operator" kubernetes container |
 | operator.leaderElection.enabled | bool | `true` | enables leader election for the operator (required when running multiple replicas) |
 | operator.leaderElection.namespace | string | `""` | namespace where the leader election lease resource will be created (defaults to release namespace) |
+| operator.resizePolicy | list | `[]` | resize policy for the operator container (requires Kubernetes 1.27+ with InPlacePodVerticalScaling feature gate) |
 | operator.resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | resource limits and requests |
 | operatorMetricsAddress | string | `":8080"` | Address to expose operator metrics |
 | podAnnotations | object | `{}` | additional annotations for server pod |
@@ -72,6 +73,7 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | prometheusRule.labels | object | `{}` | Set labels that will be applied on all PrometheusRules (alerts) |
 | prometheusRule.pyrraReconciliationError.severity | string | `"warning"` | Set severity for PyrraReconciliationError alert |
 | prometheusUrl | string | `"http://prometheus-operated.monitoring.svc.cluster.local:9090"` | URL to prometheus instance with metrics |
+| resizePolicy | list | `[]` | resize policy for the server container (requires Kubernetes 1.27+ with InPlacePodVerticalScaling feature gate) |
 | resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | resource limits and requests for server pod |
 | route | object | `{"main":{"additionalRules":[],"annotations":{},"apiVersion":"gateway.networking.k8s.io/v1","enabled":false,"filters":[],"hostnames":[],"httpsRedirect":false,"kind":"HTTPRoute","labels":{},"matches":[{"path":{"type":"PathPrefix","value":"/"}}],"parentRefs":[],"timeouts":{}}}` | Gateway API HTTPRoute configuration. Supports multiple named routes. |
 | route.main.additionalRules | list | `[]` | additional custom rules prepended to the route rules |
