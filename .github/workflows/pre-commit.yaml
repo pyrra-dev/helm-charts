@@ -1,12 +1,12 @@
+---
 name: pre-commit
+permissions:
+  contents: read
 
 on:
   pull_request:
   push:
     branches: [main]
-
-permissions:
-  contents: read
 
 jobs:
   pre-commit:

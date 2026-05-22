@@ -1,0 +1,41 @@
+---
+name: CRD Sync Check
+permissions: {}
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - charts/pyrra/Chart.yaml
+      - charts/pyrra/crds/**
+      - .github/workflows/crd-sync-check.yaml
+
+jobs:
+  crd-sync-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Compare CRD against upstream appVersion
+        run: |
+          set -euo pipefail
+          app_version=$(grep '^appVersion:' charts/pyrra/Chart.yaml | awk '{print $2}')
+          if [[ -z "$app_version" ]]; then
+            echo "Could not read appVersion from charts/pyrra/Chart.yaml" >&2
+            exit 1
+          fi
+          echo "Chart.yaml appVersion: $app_version"
+
+          upstream_url="https://raw.githubusercontent.com/pyrra-dev/pyrra/${app_version}/jsonnet/controller-gen/pyrra.dev_servicelevelobjectives.json"
+          echo "Fetching upstream CRD from: $upstream_url"
+          curl -fsSL "$upstream_url" -o upstream-crd.json
+
+          if ! diff -u charts/pyrra/crds/servicelevelobjectives.json upstream-crd.json; then
+            echo "::error::charts/pyrra/crds/servicelevelobjectives.json is out of sync with pyrra-dev/pyrra@${app_version}. Update it from ${upstream_url}."
+            exit 1
+          fi
+          echo "CRD is in sync with upstream ${app_version}."
