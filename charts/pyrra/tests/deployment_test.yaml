@@ -140,3 +140,57 @@ tests:
               restartPolicy: NotRequired
       - notExists:
           path: spec.template.spec.containers[1].resizePolicy
+
+  - it: should render no podLabels on the pod template by default
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: pyrra
+            app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: should add podLabels to the pod template when set
+    set:
+      podLabels:
+        team: sre
+        environment: prod
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: sre
+      - equal:
+          path: spec.template.metadata.labels.environment
+          value: prod
+
+  - it: should keep selector free of podLabels
+    set:
+      podLabels:
+        team: sre
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: pyrra
+            app.kubernetes.io/instance: RELEASE-NAME
+      - notExists:
+          path: spec.selector.matchLabels.team
+
+  - it: should keep podLabels off the Deployment metadata
+    set:
+      podLabels:
+        team: sre
+    asserts:
+      - notExists:
+          path: metadata.labels.team
+
+  - it: should preserve selector labels on the pod template when podLabels is set
+    set:
+      podLabels:
+        team: sre
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: pyrra
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: RELEASE-NAME

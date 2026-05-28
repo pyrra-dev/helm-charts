@@ -46,8 +46,10 @@ serviceAccount:
   # -- If not set and create is true, a name is generated using the fullname template
   name: ""
 
-# -- additional annotations for server pod
+# -- additional annotations for pod
 podAnnotations: {}
+# -- additional labels for pod
+podLabels: {}
 # -- security context for pod
 podSecurityContext:
   runAsNonRoot: true

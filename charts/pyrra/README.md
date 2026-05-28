@@ -66,7 +66,8 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | operator.resizePolicy | list | `[]` | resize policy for the operator container (requires Kubernetes 1.27+ with InPlacePodVerticalScaling feature gate) |
 | operator.resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | resource limits and requests |
 | operatorMetricsAddress | string | `":8080"` | Address to expose operator metrics |
-| podAnnotations | object | `{}` | additional annotations for server pod |
+| podAnnotations | object | `{}` | additional annotations for pod |
+| podLabels | object | `{}` | additional labels for pod |
 | podSecurityContext | object | `{"runAsNonRoot":true,"seccompProfile":{"type":"RuntimeDefault"}}` | security context for pod |
 | prometheusExternalUrl | string | `""` | URL to public-facing prometheus UI in case it differs from prometheusUrl |
 | prometheusRule.enabled | bool | `false` | enables creation of PrometheusRules to monitor Pyrra |
