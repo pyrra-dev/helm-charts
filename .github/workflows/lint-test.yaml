@@ -38,7 +38,7 @@ jobs:
           charts: charts/pyrra
           helm-version: v3.20.0
           # renovate: github=helm-unittest/helm-unittest
-          unittest-version: v1.1.0
+          unittest-version: v1.1.1
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Helm
