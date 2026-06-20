@@ -235,3 +235,45 @@ dashboards:
   labelValue: "1"
   annotations: {}
   extraLabels: {}
+
+openshift:
+  # -- enables common OpenShift support
+  enabled: false
+  oauth:
+    # -- enables the OpenShift OAuth-proxy sidecar in front of the API
+    enabled: false
+    # -- OAuth-proxy image (for example quay.io/openshift/origin-oauth-proxy:4.16)
+    image: ""
+    # -- listening port of the OAuth-proxy sidecar (used by the container,
+    # the Service and the proxy address flag)
+    port: 9091
+    # -- when true the proxy terminates TLS itself (HTTPS listener, Reencrypt
+    # Route, service.beta.openshift.io/serving-cert-secret-name annotation);
+    # when false the proxy listens on plain HTTP behind an Edge-terminated Route
+    tls: true
+    # -- session secret used by the OAuth-proxy cookie
+    sessionSecret: ""
+    # -- email domains accepted by the OAuth-proxy (rendered as -email-domain flags)
+    emailDomains:
+      - "*"
+    # -- extra args appended to the OAuth-proxy command line
+    extraArgs: []
+    # -- resource limits and requests for the OAuth-proxy container
+    resources:
+      limits:
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 128Mi
+    # -- security context for the OAuth-proxy container
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+  route:
+    # -- enables creation of an OpenShift Route
+    enabled: false
+    # -- application subdomain within the cluster domain
+    subdomain: "pyrra"

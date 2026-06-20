@@ -78,3 +78,11 @@ Operator metrics port
 {{- define "pyrra.operatorMetricsPort" -}}
 {{ (split ":" .Values.operatorMetricsAddress)._1 }}
 {{- end }}
+
+{{/*
+OpenShift OAuth-proxy listening port. Used by the sidecar container, the
+Service port mapping and the proxy address argument.
+*/}}
+{{- define "pyrra.openshiftOauthPort" -}}
+{{- .Values.openshift.oauth.port | default 9091 -}}
+{{- end }}

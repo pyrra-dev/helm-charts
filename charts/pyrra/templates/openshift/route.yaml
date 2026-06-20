@@ -1,0 +1,33 @@
+{{- if and .Values.openshift.enabled .Values.openshift.route.enabled }}
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: {{ include "pyrra.fullname" . }}
+  annotations:
+    openshift.io/host.generated: 'true'
+    {{- with .Values.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  labels:
+    {{- include "pyrra.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.openshift.route.subdomain }}
+  subdomain: "{{ .Values.openshift.route.subdomain }}"
+  {{- end }}
+  to:
+    kind: Service
+    name: {{ include "pyrra.fullname" . }}
+  port:
+    {{- if .Values.openshift.oauth.enabled }}
+    targetPort: {{ if .Values.openshift.oauth.tls }}oauth-https{{ else }}oauth-http{{ end }}
+    {{- else }}
+    targetPort: http
+    {{- end }}
+  tls:
+    {{- if and .Values.openshift.oauth.enabled .Values.openshift.oauth.tls }}
+    termination: Reencrypt
+    {{- else }}
+    termination: Edge
+    {{- end }}
+{{- end }}

@@ -1,0 +1,295 @@
+suite: openshift
+templates:
+  - templates/deployment.yaml
+  - templates/clusterrole.yaml
+  - templates/service.yaml
+  - templates/serviceaccount.yaml
+  - templates/openshift/route.yaml
+  - templates/openshift/secrets.yaml
+  - templates/openshift/configmap.yaml
+tests:
+  - it: should not render OpenShift-only resources by default
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/openshift/route.yaml
+      - hasDocuments:
+          count: 0
+        template: templates/openshift/secrets.yaml
+      - hasDocuments:
+          count: 0
+        template: templates/openshift/configmap.yaml
+
+  - it: should add the injected-certs ConfigMap when openshift+oauth are enabled
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image: quay.io/openshift/origin-oauth-proxy:4.16
+      openshift.oauth.sessionSecret: secret
+    template: templates/openshift/configmap.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.labels["config.openshift.io/inject-trusted-cabundle"]
+          value: "true"
+
+  - it: should add OpenShift TLS flags and CA volume mount on the API container when enabled
+    set:
+      openshift.enabled: true
+    template: templates/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --tls-client-ca-file=/etc/tls/openshift-service-ca.crt/service-ca.crt
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --prometheus-bearer-token-path=/var/run/secrets/kubernetes.io/serviceaccount/token
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: openshift-service-ca-crt
+            mountPath: /etc/tls/openshift-service-ca.crt
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: openshift-service-ca-crt
+            configMap:
+              name: openshift-service-ca.crt
+
+  - it: should add the prometheuses/api ClusterRole rule when openshift is enabled
+    set:
+      openshift.enabled: true
+    template: templates/clusterrole.yaml
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - monitoring.coreos.com
+            resources:
+              - prometheuses/api
+            resourceNames:
+              - k8s
+            verbs:
+              - get
+              - create
+              - update
+
+  - it: should not render the oauth-proxy container when only openshift.enabled is set
+    set:
+      openshift.enabled: true
+    template: templates/deployment.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 2
+
+  - it: should render the oauth-proxy container when oauth is enabled
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image: quay.io/openshift/origin-oauth-proxy:4.16
+      openshift.oauth.sessionSecret: secret
+    template: templates/deployment.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 3
+      - equal:
+          path: spec.template.spec.containers[2].name
+          value: oauth-proxy
+      - equal:
+          path: spec.template.spec.containers[2].image
+          value: quay.io/openshift/origin-oauth-proxy:4.16
+      - equal:
+          path: spec.template.spec.containers[2].ports[0].containerPort
+          value: 9091
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -https-address=:9091
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -email-domain=*
+
+  - it: should render configured emailDomains and extraArgs on the oauth-proxy
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image: quay.io/openshift/origin-oauth-proxy:4.16
+      openshift.oauth.sessionSecret: secret
+      openshift.oauth.emailDomains:
+        - example.com
+        - example.org
+      openshift.oauth.extraArgs:
+        - -skip-auth-regex=^/metrics$
+    template: templates/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -email-domain=example.com
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -email-domain=example.org
+      - notContains:
+          path: spec.template.spec.containers[2].args
+          content: -email-domain=*
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -skip-auth-regex=^/metrics$
+
+  - it: should switch the Service to https on the OAuth port when oauth is enabled
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image: quay.io/openshift/origin-oauth-proxy:4.16
+      openshift.oauth.sessionSecret: secret
+    template: templates/service.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["service.beta.openshift.io/serving-cert-secret-name"]
+          value: RELEASE-NAME-pyrra-tls
+      - equal:
+          path: spec.ports[0].name
+          value: oauth-https
+      - equal:
+          path: spec.ports[0].port
+          value: 9091
+
+  - it: should render OAuth redirect annotation on the ServiceAccount when oauth is enabled
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image: quay.io/openshift/origin-oauth-proxy:4.16
+      openshift.oauth.sessionSecret: secret
+    template: templates/serviceaccount.yaml
+    asserts:
+      - matchRegex:
+          path: metadata.annotations["serviceaccounts.openshift.io/oauth-redirectreference.primary"]
+          pattern: '"name":"RELEASE-NAME-pyrra"'
+
+  - it: should render OAuth secrets when oauth is enabled
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image: quay.io/openshift/origin-oauth-proxy:4.16
+      openshift.oauth.sessionSecret: secret
+    template: templates/openshift/secrets.yaml
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should render an OpenShift Route with Edge termination when oauth is disabled
+    set:
+      openshift.enabled: true
+      openshift.route.enabled: true
+    template: templates/openshift/route.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Route
+      - equal:
+          path: spec.tls.termination
+          value: Edge
+      - equal:
+          path: spec.port.targetPort
+          value: http
+      - equal:
+          path: spec.subdomain
+          value: pyrra
+
+  - it: should render an OpenShift Route with Reencrypt termination when oauth is enabled
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image: quay.io/openshift/origin-oauth-proxy:4.16
+      openshift.oauth.sessionSecret: secret
+      openshift.route.enabled: true
+    template: templates/openshift/route.yaml
+    asserts:
+      - equal:
+          path: spec.tls.termination
+          value: Reencrypt
+      - equal:
+          path: spec.port.targetPort
+          value: oauth-https
+
+  - it: should switch the OAuth-proxy to HTTP and the Route to Edge when tls is disabled
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image: quay.io/openshift/origin-oauth-proxy:4.16
+      openshift.oauth.sessionSecret: secret
+      openshift.oauth.tls: false
+      openshift.route.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[2].ports[0].name
+          value: oauth-http
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -http-address=:9091
+        template: templates/deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[2].args
+          content: -https-address=:9091
+        template: templates/deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[2].args
+          content: -tls-cert=/etc/tls/private/tls.crt
+        template: templates/deployment.yaml
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: RELEASE-NAME-pyrra-tls
+            secret:
+              secretName: RELEASE-NAME-pyrra-tls
+        template: templates/deployment.yaml
+      - isNull:
+          path: metadata.annotations
+        template: templates/service.yaml
+      - equal:
+          path: spec.ports[0].name
+          value: oauth-http
+        template: templates/service.yaml
+      - equal:
+          path: spec.tls.termination
+          value: Edge
+        template: templates/openshift/route.yaml
+      - equal:
+          path: spec.port.targetPort
+          value: oauth-http
+        template: templates/openshift/route.yaml
+
+  - it: should honor a custom OAuth-proxy port
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image: quay.io/openshift/origin-oauth-proxy:4.16
+      openshift.oauth.sessionSecret: secret
+      openshift.oauth.port: 8443
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[2].ports[0].containerPort
+          value: 8443
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -https-address=:8443
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.ports[0].port
+          value: 8443
+        template: templates/service.yaml
+
+  - it: should not render the injected-certs ConfigMap when only openshift.enabled is set
+    set:
+      openshift.enabled: true
+    template: templates/openshift/configmap.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
