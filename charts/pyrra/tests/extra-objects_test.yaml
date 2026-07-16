@@ -1,0 +1,83 @@
+suite: extra objects
+templates:
+  - templates/extra-objects.yaml
+tests:
+  - it: should not render any object by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render a map manifest
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: test-cm
+          data:
+            key: value
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: test-cm
+
+  - it: should render a string manifest with tpl templating
+    set:
+      extraObjects:
+        - |
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: {{ include "pyrra.fullname" . }}-extra
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-pyrra-extra
+
+  - it: should render templated values inside a map manifest
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: '{{ include "pyrra.fullname" . }}-map'
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-pyrra-map
+
+  - it: should render multiple manifests
+    set:
+      extraObjects:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: first
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: second
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should accept a map of manifests
+    set:
+      extraObjects:
+        my-configmap:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: from-map
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: from-map

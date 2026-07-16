@@ -235,3 +235,19 @@ dashboards:
   labelValue: "1"
   annotations: {}
   extraLabels: {}
+
+# -- Extra Kubernetes objects to deploy with the chart. Supports a list (or map) of manifests, each entry either a YAML map or a templated string rendered with tpl.
+extraObjects: []
+  # - apiVersion: v1
+  #   kind: ConfigMap
+  #   metadata:
+  #     name: '{{ include "pyrra.fullname" . }}-extra'
+  #   data:
+  #     key: value
+  # - |
+  #   apiVersion: v1
+  #   kind: Secret
+  #   metadata:
+  #     name: {{ include "pyrra.fullname" . }}-secret
+  #   stringData:
+  #     key: value
