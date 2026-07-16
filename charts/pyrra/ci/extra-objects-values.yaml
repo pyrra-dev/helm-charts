@@ -1,0 +1,14 @@
+extraObjects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: '{{ include "pyrra.fullname" . }}-extra'
+    data:
+      key: value
+  - |
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: {{ include "pyrra.fullname" . }}-extra-secret
+    stringData:
+      key: value

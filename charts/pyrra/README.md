@@ -44,6 +44,7 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | extraApiVolumeMounts | list | `[]` | Extra Volume Mounts for the container |
 | extraApiVolumes | list | `[]` | Extra Volumes for the pod |
 | extraKubernetesArgs | list | `[]` | Extra args for Pyrra's Kubernetes container |
+| extraObjects | list | `[]` | Extra Kubernetes objects to deploy with the chart. Supports a list (or map) of manifests, each entry either a YAML map or a templated string rendered with tpl. |
 | fullnameOverride | string | `""` | Overrides helm-generated chart fullname |
 | genericRules.enabled | bool | `false` | enables generate Pyrra generic recording rules. Pyrra generates metrics with the same name for each SLO. |
 | image.pullPolicy | string | `"IfNotPresent"` | Overrides pullpolicy |
