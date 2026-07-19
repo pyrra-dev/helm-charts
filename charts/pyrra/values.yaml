@@ -43,7 +43,7 @@ serviceAccount:
   # -- Annotations to add to the service account
   annotations: {}
   # -- The name of the service account to use.
-  # -- If not set and create is true, a name is generated using the fullname template
+  # If not set and create is true, a name is generated using the fullname template
   name: ""
   # -- Whether pods running as this service account automatically mount the service account token.
   # Disabled by default; the pod mounts the token explicitly via `automountServiceAccountToken`.
@@ -77,7 +77,7 @@ prometheusUrl: http://prometheus-operated.monitoring.svc.cluster.local:9090
 prometheusExternalUrl: ""
 
 # -- URL under which the pyrra web server is serving content. this can be set when running behind a reverse proxy.
-# -- Must start with a slash and not end with a slash.
+# Must start with a slash and not end with a slash.
 routePrefix: ""
 
 service:
@@ -88,7 +88,7 @@ service:
   # -- service port for server
   port: 9099
   # -- service nodePort to expose
-  # -- node port for HTTP, choose port between <30000-32767>
+  # node port for HTTP, choose port between <30000-32767>
   nodePort: ""
   # -- service port for operator metrics
   operatorMetricsPort: 8080

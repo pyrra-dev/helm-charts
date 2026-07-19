@@ -91,17 +91,17 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | route.main.matches | list | `[{"path":{"type":"PathPrefix","value":"/"}}]` | path/header match conditions |
 | route.main.parentRefs | list | `[]` | parentRefs defines which Gateways this route attaches to |
 | route.main.timeouts | object | `{}` | timeout configuration |
-| routePrefix | string | `""` | Must start with a slash and not end with a slash. |
+| routePrefix | string | `""` | URL under which the pyrra web server is serving content. this can be set when running behind a reverse proxy. Must start with a slash and not end with a slash. |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | security context for each container |
 | service.annotations | object | `{}` | Annotations to add to the service |
-| service.nodePort | string | `""` | node port for HTTP, choose port between <30000-32767> |
+| service.nodePort | string | `""` | service nodePort to expose node port for HTTP, choose port between <30000-32767> |
 | service.operatorMetricsPort | int | `8080` | service port for operator metrics |
 | service.port | int | `9099` | service port for server |
 | service.type | string | `"ClusterIP"` | service type for server |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account |
 | serviceAccount.automountServiceAccountToken | bool | `false` | Whether pods running as this service account automatically mount the service account token. Disabled by default; the pod mounts the token explicitly via `automountServiceAccountToken`. |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created |
-| serviceAccount.name | string | `""` | If not set and create is true, a name is generated using the fullname template |
+| serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
 | serviceMonitor.enabled | bool | `false` | enables servicemonitor for server monitoring |
 | serviceMonitor.interval | string | `""` | Set interval for scraping metrics |
 | serviceMonitor.jobLabel | string | `""` | provides the possibility to override the jobName if needed |
