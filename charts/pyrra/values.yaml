@@ -42,15 +42,12 @@ serviceAccount:
   create: true
   # -- Annotations to add to the service account
   annotations: {}
-  # -- The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
+  # -- The name of the service account to use, if not set and create is true, a name is generated using the fullname template
   name: ""
-  # -- Whether pods running as this service account automatically mount the service account token.
-  # Disabled by default; the pod mounts the token explicitly via `automountServiceAccountToken`.
+  # -- Whether pods running as this service account automatically mount the service account token, disabled by default; the pod mounts the token explicitly via `automountServiceAccountToken`.
   automountServiceAccountToken: false
 
-# -- Whether to automount the service account token in the pod.
-# Enabled by default because Pyrra's kubernetes container requires Kubernetes API access.
+# -- Whether to automount the service account token in the pod, enabled by default because Pyrra's kubernetes container requires Kubernetes API access.
 automountServiceAccountToken: true
 
 # -- additional annotations for pod

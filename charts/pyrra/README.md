@@ -34,7 +34,7 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | additionalLabels | object | `{}` |  |
-| automountServiceAccountToken | bool | `true` | Whether to automount the service account token in the pod. Enabled by default because Pyrra's kubernetes container requires Kubernetes API access. |
+| automountServiceAccountToken | bool | `true` | Whether to automount the service account token in the pod, enabled by default because Pyrra's kubernetes container requires Kubernetes API access. |
 | dashboards.annotations | object | `{}` |  |
 | dashboards.enabled | bool | `false` | enables Grafana dashboards being deployed via configmap |
 | dashboards.extraLabels | object | `{}` |  |
@@ -99,9 +99,9 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | service.port | int | `9099` | service port for server |
 | service.type | string | `"ClusterIP"` | service type for server |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account |
-| serviceAccount.automountServiceAccountToken | bool | `false` | Whether pods running as this service account automatically mount the service account token. Disabled by default; the pod mounts the token explicitly via `automountServiceAccountToken`. |
+| serviceAccount.automountServiceAccountToken | bool | `false` | Whether pods running as this service account automatically mount the service account token, disabled by default; the pod mounts the token explicitly via `automountServiceAccountToken`. |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created |
-| serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
+| serviceAccount.name | string | `""` | The name of the service account to use, if not set and create is true, a name is generated using the fullname template |
 | serviceMonitor.enabled | bool | `false` | enables servicemonitor for server monitoring |
 | serviceMonitor.interval | string | `""` | Set interval for scraping metrics |
 | serviceMonitor.jobLabel | string | `""` | provides the possibility to override the jobName if needed |
