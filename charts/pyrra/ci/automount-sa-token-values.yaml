@@ -1,0 +1,6 @@
+# Exercises the ServiceAccount-level automount toggle with an installable
+# combination. The pod-level false path breaks Pyrra's Kubernetes API access
+# by design, so it is covered by unit tests instead of a live install.
+serviceAccount:
+  automountServiceAccountToken: true
+automountServiceAccountToken: true
