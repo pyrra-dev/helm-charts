@@ -1,0 +1,7 @@
+# Exercises the operator alert-link URL and the Prometheus-facing API config
+# (public UI redirect, basic-auth username, Mimir tenant). All of these are
+# boot-safe flags with no external dependency, so the release installs cleanly.
+externalUrl: https://pyrra.example.com
+prometheusExternalUrl: https://prometheus.example.com
+prometheusBasicAuthUsername: pyrra
+mimirOrgId: tenant-a

@@ -62,6 +62,117 @@ tests:
           path: spec.template.spec.containers[1].args
           content: --prometheus-external-url=https://prometheus.example.com
 
+  - it: should not include --external-url arg by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --external-url
+
+  - it: should include --external-url arg when externalUrl is set
+    set:
+      externalUrl: https://pyrra.example.com
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --external-url=https://pyrra.example.com
+
+  - it: should not include Prometheus auth or Grafana args by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[1].args
+          content: --prometheus-basic-auth-username=
+      - notContains:
+          path: spec.template.spec.containers[1].args
+          content: --prometheus-bearer-token-path=
+      - notContains:
+          path: spec.template.spec.containers[1].args
+          content: --mimir-org-id=
+      - notContains:
+          path: spec.template.spec.containers[1].args
+          content: --grafana-external-url=
+
+  - it: should include Prometheus auth args when set
+    set:
+      prometheusBasicAuthUsername: pyrra
+      prometheusBearerTokenPath: /var/run/secrets/token
+      mimirOrgId: tenant-a
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --prometheus-basic-auth-username=pyrra
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --prometheus-bearer-token-path=/var/run/secrets/token
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --mimir-org-id=tenant-a
+
+  - it: should mount a Prometheus bearer token from a secret alongside the flag
+    set:
+      prometheusBearerTokenPath: /etc/pyrra/prometheus/token
+      extraApiVolumes:
+        - name: prometheus-token
+          secret:
+            secretName: prometheus-token
+      extraApiVolumeMounts:
+        - name: prometheus-token
+          mountPath: /etc/pyrra/prometheus
+          readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --prometheus-bearer-token-path=/etc/pyrra/prometheus/token
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: prometheus-token
+            mountPath: /etc/pyrra/prometheus
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: prometheus-token
+            secret:
+              secretName: prometheus-token
+
+  - it: should include Grafana args when set
+    set:
+      grafanaExternalUrl: https://grafana.example.com
+      grafanaExternalOrgId: "2"
+      grafanaExternalDatasourceId: prom-ds
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --grafana-external-url=https://grafana.example.com
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --grafana-external-org-id=2
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --grafana-external-datasource-id=prom-ds
+
+  - it: should fail when both prometheusExternalUrl and grafanaExternalUrl are set
+    set:
+      prometheusExternalUrl: https://prometheus.example.com
+      grafanaExternalUrl: https://grafana.example.com
+    asserts:
+      - failedTemplate:
+          errorMessage: "pyrra: set only one of prometheusExternalUrl or grafanaExternalUrl, not both"
+
+  - it: should fail when grafanaExternalUrl is set without grafanaExternalDatasourceId
+    set:
+      grafanaExternalUrl: https://grafana.example.com
+    asserts:
+      - failedTemplate:
+          errorMessage: "pyrra: grafanaExternalDatasourceId is required when grafanaExternalUrl is set"
+
+  - it: should fail when grafanaExternalDatasourceId is set without grafanaExternalUrl
+    set:
+      grafanaExternalDatasourceId: prom-ds
+    asserts:
+      - failedTemplate:
+          errorMessage: "pyrra: grafanaExternalDatasourceId requires grafanaExternalUrl to be set"
+
   - it: should add extra api volumes
     set:
       extraApiVolumes:

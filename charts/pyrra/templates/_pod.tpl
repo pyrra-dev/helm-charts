@@ -22,6 +22,9 @@ Container definition for the Pyrra operator (kubernetes mode).
     - --enable-leader-election
     - --leader-election-namespace={{ .Values.operator.leaderElection.namespace | default (include "pyrra.namespace" .) }}
     {{- end }}
+    {{- if .Values.externalUrl }}
+    - --external-url={{ .Values.externalUrl }}
+    {{- end }}
     {{- with .Values.extraKubernetesArgs }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -47,6 +50,15 @@ Container definition for the Pyrra operator (kubernetes mode).
 Container definition for the Pyrra API server.
 */}}
 {{- define "pyrra.container.api" -}}
+{{- if and .Values.prometheusExternalUrl .Values.grafanaExternalUrl }}
+{{- fail "pyrra: set only one of prometheusExternalUrl or grafanaExternalUrl, not both" }}
+{{- end }}
+{{- if and .Values.grafanaExternalUrl (not .Values.grafanaExternalDatasourceId) }}
+{{- fail "pyrra: grafanaExternalDatasourceId is required when grafanaExternalUrl is set" }}
+{{- end }}
+{{- if and .Values.grafanaExternalDatasourceId (not .Values.grafanaExternalUrl) }}
+{{- fail "pyrra: grafanaExternalDatasourceId requires grafanaExternalUrl to be set" }}
+{{- end -}}
 - name: {{ .Chart.Name }}
   securityContext:
     {{- toYaml .Values.securityContext | nindent 4 }}
@@ -58,6 +70,24 @@ Container definition for the Pyrra API server.
     - --api-url=http://localhost:9444
     {{- if .Values.prometheusExternalUrl }}
     - --prometheus-external-url={{ .Values.prometheusExternalUrl }}
+    {{- end }}
+    {{- if .Values.prometheusBasicAuthUsername }}
+    - --prometheus-basic-auth-username={{ .Values.prometheusBasicAuthUsername }}
+    {{- end }}
+    {{- if .Values.prometheusBearerTokenPath }}
+    - --prometheus-bearer-token-path={{ .Values.prometheusBearerTokenPath }}
+    {{- end }}
+    {{- if .Values.mimirOrgId }}
+    - --mimir-org-id={{ .Values.mimirOrgId }}
+    {{- end }}
+    {{- if .Values.grafanaExternalUrl }}
+    - --grafana-external-url={{ .Values.grafanaExternalUrl }}
+    {{- end }}
+    {{- if .Values.grafanaExternalOrgId }}
+    - --grafana-external-org-id={{ .Values.grafanaExternalOrgId }}
+    {{- end }}
+    {{- if .Values.grafanaExternalDatasourceId }}
+    - --grafana-external-datasource-id={{ .Values.grafanaExternalDatasourceId }}
     {{- end }}
     {{- if .Values.routePrefix }}
     - --route-prefix={{ .Values.routePrefix }}

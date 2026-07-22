@@ -1,0 +1,7 @@
+# Exercises the Grafana Explore redirect, which is mutually exclusive with
+# prometheusExternalUrl and only valid when URL and datasource ID are set
+# together. Kept in its own fixture so it never collides with the API config
+# fixture that sets prometheusExternalUrl.
+grafanaExternalUrl: https://grafana.example.com
+grafanaExternalDatasourceId: prometheus-uid
+grafanaExternalOrgId: "2"
