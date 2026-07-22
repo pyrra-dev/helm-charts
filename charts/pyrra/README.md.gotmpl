@@ -19,6 +19,28 @@ helm install pyrra pyrra/pyrra
 Pyrra needs prometheus to work. You will need to specify that via prometheusUrl variable - default assumes you have default [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) deployed to "monitoring" namespace.
 Additionally, you (most likely) will need to specify prometheusExternalUrl with URL to public-facing prometheus UI (ingress or whatever you're using), otherwise pyrra links to graphs will be broken
 
+If Prometheus is behind authentication, set `prometheusBasicAuthUsername` and/or `prometheusBearerTokenPath`. Use `mimirOrgId` to query a specific tenant when Prometheus is fronted by Mimir.
+
+`prometheusBearerTokenPath` points at a file inside the container, so mount the token from a Secret with `extraApiVolumes`/`extraApiVolumeMounts`:
+
+```yaml
+prometheusBearerTokenPath: /etc/pyrra/prometheus/token
+extraApiVolumes:
+    - {name: prometheus-token, secret: {secretName: prometheus-token}}
+extraApiVolumeMounts:
+    - {name: prometheus-token, mountPath: /etc/pyrra/prometheus, readOnly: true}
+```
+
+There is no dedicated value for the HTTP basic-auth password: Pyrra only accepts it as a plain flag, which would land in the pod spec. If you need it, pass it through `extraApiArgs`.
+
+## Linking alerts back to Pyrra
+
+Set `externalUrl` to the public address of the Pyrra UI. The operator then adds a `pyrra_url` annotation to every generated alert, so an on-call responder can jump straight from a firing alert to the corresponding SLO.
+
+## Grafana Explore instead of Prometheus
+
+As an alternative to `prometheusExternalUrl`, set `grafanaExternalUrl` together with `grafanaExternalDatasourceId` to redirect graph links to Grafana Explore. `prometheusExternalUrl` and `grafanaExternalUrl` are mutually exclusive.
+
 ## Webhook Admissions Controller Validations (Optional)
 
 Pyrra can be configured to validate SLOs and SLO groups using a webhook admission controller. This is an optional feature that can be enabled by setting the `validatingWebhookConfiguration.enabled` value to `true`. The webhook admission controller will validate SLOs when they are created or updated.

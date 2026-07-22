@@ -19,6 +19,28 @@ helm install pyrra pyrra/pyrra
 Pyrra needs prometheus to work. You will need to specify that via prometheusUrl variable - default assumes you have default [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) deployed to "monitoring" namespace.
 Additionally, you (most likely) will need to specify prometheusExternalUrl with URL to public-facing prometheus UI (ingress or whatever you're using), otherwise pyrra links to graphs will be broken
 
+If Prometheus is behind authentication, set `prometheusBasicAuthUsername` and/or `prometheusBearerTokenPath`. Use `mimirOrgId` to query a specific tenant when Prometheus is fronted by Mimir.
+
+`prometheusBearerTokenPath` points at a file inside the container, so mount the token from a Secret with `extraApiVolumes`/`extraApiVolumeMounts`:
+
+```yaml
+prometheusBearerTokenPath: /etc/pyrra/prometheus/token
+extraApiVolumes:
+    - {name: prometheus-token, secret: {secretName: prometheus-token}}
+extraApiVolumeMounts:
+    - {name: prometheus-token, mountPath: /etc/pyrra/prometheus, readOnly: true}
+```
+
+There is no dedicated value for the HTTP basic-auth password: Pyrra only accepts it as a plain flag, which would land in the pod spec. If you need it, pass it through `extraApiArgs`.
+
+## Linking alerts back to Pyrra
+
+Set `externalUrl` to the public address of the Pyrra UI. The operator then adds a `pyrra_url` annotation to every generated alert, so an on-call responder can jump straight from a firing alert to the corresponding SLO.
+
+## Grafana Explore instead of Prometheus
+
+As an alternative to `prometheusExternalUrl`, set `grafanaExternalUrl` together with `grafanaExternalDatasourceId` to redirect graph links to Grafana Explore. `prometheusExternalUrl` and `grafanaExternalUrl` are mutually exclusive.
+
 ## Webhook Admissions Controller Validations (Optional)
 
 Pyrra can be configured to validate SLOs and SLO groups using a webhook admission controller. This is an optional feature that can be enabled by setting the `validatingWebhookConfiguration.enabled` value to `true`. The webhook admission controller will validate SLOs when they are created or updated.
@@ -41,6 +63,7 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | dashboards.label | string | `"grafana_dashboard"` | default value from the Grafana chart |
 | dashboards.labelValue | string | `"1"` | default value from the Grafana chart |
 | dashboards.namespace | string | `nil` |  |
+| externalUrl | string | `""` | Public-facing URL of the Pyrra UI. When set, the operator adds a pyrra_url annotation with a direct link to the SLO to every generated alert. |
 | extraApiArgs | list | `[]` | Extra args for Pyrra's API container |
 | extraApiVolumeMounts | list | `[]` | Extra Volume Mounts for the container |
 | extraApiVolumes | list | `[]` | Extra Volumes for the pod |
@@ -48,6 +71,9 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | extraObjects | list | `[]` | Extra Kubernetes objects to deploy with the chart. Supports a list (or map) of manifests, each entry either a YAML map or a templated string rendered with tpl. |
 | fullnameOverride | string | `""` | Overrides helm-generated chart fullname |
 | genericRules.enabled | bool | `false` | enables generate Pyrra generic recording rules. Pyrra generates metrics with the same name for each SLO. |
+| grafanaExternalDatasourceId | string | `""` | Grafana Explore Prometheus datasource ID. Required when grafanaExternalUrl is set. |
+| grafanaExternalOrgId | string | `""` | Grafana Explore organization ID. Pyrra defaults to "1" when unset. |
+| grafanaExternalUrl | string | `""` | URL to redirect users to the Grafana Explore page instead of Prometheus. Mutually exclusive with prometheusExternalUrl. |
 | image.pullPolicy | string | `"IfNotPresent"` | Overrides pullpolicy |
 | image.repository | string | `"ghcr.io/pyrra-dev/pyrra"` | Overrides the image repository |
 | image.tag | string | `""` | Overrides the image tag |
@@ -59,6 +85,7 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"ImplementationSpecific"` |  |
 | ingress.tls | list | `[]` |  |
+| mimirOrgId | string | `""` | Mimir tenant ID (X-Scope-OrgID) to send when querying Prometheus behind Mimir |
 | nameOverride | string | `""` | overrides chart name |
 | namespaceOverride | string | `""` | Overrides the namespace for all resources (defaults to .Release.Namespace) |
 | nodeSelector | object | `{}` | node selector for scheduling server pod |
@@ -71,6 +98,8 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | podAnnotations | object | `{}` | additional annotations for pod |
 | podLabels | object | `{}` | additional labels for pod |
 | podSecurityContext | object | `{"runAsNonRoot":true,"seccompProfile":{"type":"RuntimeDefault"}}` | security context for pod |
+| prometheusBasicAuthUsername | string | `""` | HTTP basic auth username for querying Prometheus |
+| prometheusBearerTokenPath | string | `""` | Path to a bearer token file for querying Prometheus. Mount the file via extraApiVolumes/extraApiVolumeMounts. For the basic auth password, use extraApiArgs, since Pyrra only accepts it as a plain flag value. |
 | prometheusExternalUrl | string | `""` | URL to public-facing prometheus UI in case it differs from prometheusUrl |
 | prometheusRule.enabled | bool | `false` | enables creation of PrometheusRules to monitor Pyrra |
 | prometheusRule.labels | object | `{}` | Set labels that will be applied on all PrometheusRules (alerts) |

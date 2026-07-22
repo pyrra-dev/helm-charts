@@ -72,10 +72,26 @@ securityContext:
 prometheusUrl: http://prometheus-operated.monitoring.svc.cluster.local:9090
 # -- URL to public-facing prometheus UI in case it differs from prometheusUrl
 prometheusExternalUrl: ""
+# -- HTTP basic auth username for querying Prometheus
+prometheusBasicAuthUsername: ""
+# -- Path to a bearer token file for querying Prometheus. Mount the file via extraApiVolumes/extraApiVolumeMounts. For the basic auth password, use extraApiArgs, since Pyrra only accepts it as a plain flag value.
+prometheusBearerTokenPath: ""
+# -- Mimir tenant ID (X-Scope-OrgID) to send when querying Prometheus behind Mimir
+mimirOrgId: ""
+
+# -- URL to redirect users to the Grafana Explore page instead of Prometheus. Mutually exclusive with prometheusExternalUrl.
+grafanaExternalUrl: ""
+# -- Grafana Explore organization ID. Pyrra defaults to "1" when unset.
+grafanaExternalOrgId: ""
+# -- Grafana Explore Prometheus datasource ID. Required when grafanaExternalUrl is set.
+grafanaExternalDatasourceId: ""
 
 # -- URL under which the pyrra web server is serving content. this can be set when running behind a reverse proxy.
 # Must start with a slash and not end with a slash.
 routePrefix: ""
+
+# -- Public-facing URL of the Pyrra UI. When set, the operator adds a pyrra_url annotation with a direct link to the SLO to every generated alert.
+externalUrl: ""
 
 service:
   # -- Annotations to add to the service
