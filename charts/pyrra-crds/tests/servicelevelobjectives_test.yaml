@@ -1,0 +1,28 @@
+suite: servicelevelobjectives-crd
+templates:
+  - templates/servicelevelobjectives.yaml
+tests:
+  - it: should render the ServiceLevelObjective CRD
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: CustomResourceDefinition
+      - equal:
+          path: metadata.name
+          value: servicelevelobjectives.pyrra.dev
+
+  - it: should keep the CRD on uninstall by default
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+
+  - it: should drop the keep annotation when crds.keep is false
+    set:
+      crds.keep: false
+    asserts:
+      - notExists:
+          path: metadata.annotations["helm.sh/resource-policy"]
+      - exists:
+          path: metadata.annotations["controller-gen.kubebuilder.io/version"]

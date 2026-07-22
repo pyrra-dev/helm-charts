@@ -36,7 +36,7 @@ jobs:
         # https://github.com/helm-unittest/helm-unittest/issues/777
         uses: d3adb5/helm-unittest-action@850bc76597579183998069830d5fa8c3ef0ea34a # v2.5.0
         with:
-          charts: charts/pyrra
+          charts: charts/*
           helm-version: v3.20.0
           # renovate: github=helm-unittest/helm-unittest
           unittest-version: v1.1.1
@@ -60,13 +60,17 @@ jobs:
       - name: Run kubeconform
         run: |
           K8S_VERSION=$(echo "${{ matrix.k8s-version }}" | sed 's|^v||')
-          for values_file in charts/pyrra/ci/*.yaml; do
-            helm template pyrra charts/pyrra -f "$values_file" | kubeconform \
-              -kubernetes-version "$K8S_VERSION" \
-              -strict \
-              -summary \
-              -schema-location default \
-              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+          for chart in charts/*/; do
+            for values_file in "${chart}"ci/*.yaml; do
+              [ -e "$values_file" ] || continue
+              helm template test "$chart" -f "$values_file" | kubeconform \
+                -kubernetes-version "$K8S_VERSION" \
+                -strict \
+                -summary \
+                -ignore-missing-schemas \
+                -schema-location default \
+                -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+            done
           done
 
       - name: Set up Python

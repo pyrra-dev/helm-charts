@@ -1,0 +1,10 @@
+apiVersion: v2
+name: pyrra-crds
+# renovate: github=pyrra-dev/pyrra
+appVersion: v0.10.1
+version: 0.1.0
+description: Pyrra CustomResourceDefinitions, installable independently of the pyrra chart
+kubeVersion: ">=1.16.0-0"
+sources:
+  - https://github.com/pyrra-dev/pyrra
+type: application

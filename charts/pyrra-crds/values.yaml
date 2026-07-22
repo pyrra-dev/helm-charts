@@ -1,0 +1,4 @@
+crds:
+  # -- Add the `helm.sh/resource-policy: keep` annotation so `helm uninstall`
+  # leaves the CRD (and every ServiceLevelObjective) in place.
+  keep: true
