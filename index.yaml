@@ -371,4 +371,19 @@ entries:
     urls:
     - https://github.com/pyrra-dev/helm-charts/releases/download/pyrra-0.15.0/pyrra-0.15.0.tgz
     version: 0.15.0
-generated: "2026-07-20T07:26:32.054973756Z"
+  pyrra-crds:
+  - apiVersion: v2
+    appVersion: v0.10.1
+    created: "2026-07-22T09:12:51.979568971Z"
+    description: Pyrra CustomResourceDefinitions, installable independently of the
+      pyrra chart
+    digest: 3e38182be0143b0396ec7724d304d1b38649476b8d9038d4a496da2dc6b0fdc5
+    kubeVersion: '>=1.16.0-0'
+    name: pyrra-crds
+    sources:
+    - https://github.com/pyrra-dev/pyrra
+    type: application
+    urls:
+    - https://github.com/pyrra-dev/helm-charts/releases/download/pyrra-crds-0.1.0/pyrra-crds-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-07-22T09:12:51.979617834Z"
