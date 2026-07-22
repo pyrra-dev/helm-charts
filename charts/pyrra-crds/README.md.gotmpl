@@ -1,0 +1,51 @@
+{{ template "chart.header" . }}
+
+{{ template "chart.description" . }}
+
+{{ template "chart.sourcesSection" . }}
+
+{{ template "chart.requirementsSection" . }}
+
+The [`pyrra`](../pyrra) chart installs the CRD from its `crds/` directory, which
+Helm never upgrades and which ships again with every release. This chart keeps
+the CRD in `templates/` instead, so one release owns it and `helm upgrade` moves
+it along with the Pyrra version. That helps when several pyrra instances share a
+cluster.
+
+## Usage
+
+Install the CRD once per cluster, then install the `pyrra` chart(s) with
+`--skip-crds` so they do not fight over ownership:
+
+```bash
+helm install pyrra-crds pyrra/pyrra-crds
+helm install pyrra pyrra/pyrra --skip-crds
+```
+
+By default the CRD carries `helm.sh/resource-policy: keep` (`crds.keep`), so
+`helm uninstall pyrra-crds` leaves the CRD (and all `ServiceLevelObjective`
+resources) in place. Remove it manually if you really want it gone:
+
+```bash
+kubectl delete crd servicelevelobjectives.pyrra.dev
+```
+
+{{ template "chart.valuesSection" . }}
+
+## Migrating an existing install
+
+If a `pyrra` release already created the CRD (via its `crds/` directory), the
+object has no Helm ownership metadata and `helm install pyrra-crds` fails with
+`invalid ownership metadata`. Adopt the existing CRD into the new release before
+installing (Helm >= 3.2.0), substituting the namespace you install `pyrra-crds`
+into:
+
+```bash
+kubectl label crd servicelevelobjectives.pyrra.dev app.kubernetes.io/managed-by=Helm
+kubectl annotate crd servicelevelobjectives.pyrra.dev meta.helm.sh/release-name=pyrra-crds meta.helm.sh/release-namespace=<namespace>
+helm install pyrra-crds pyrra/pyrra-crds -n <namespace>
+```
+
+The CRD in `files/` is a verbatim copy of the one in the `pyrra` chart. The
+`resource-policy` annotation is injected at render time, and CI keeps the two
+copies in sync.

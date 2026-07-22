@@ -1,0 +1,13 @@
+{{- /*
+Render the pristine upstream CRD from files/ and, when crds.keep is set,
+inject helm.sh/resource-policy: keep so uninstalling the release does not
+cascade-delete every ServiceLevelObjective in the cluster. Keeping the file
+in files/ pristine lets CI byte-diff it against the pyrra chart's copy.
+*/ -}}
+{{- $crd := .Files.Get "files/servicelevelobjectives.json" | fromJson -}}
+{{- if .Values.crds.keep -}}
+{{- $annotations := $crd.metadata.annotations | default dict -}}
+{{- $_ := set $annotations "helm.sh/resource-policy" "keep" -}}
+{{- $_ := set $crd.metadata "annotations" $annotations -}}
+{{- end -}}
+{{ $crd | toYaml }}

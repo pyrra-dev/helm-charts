@@ -9,6 +9,7 @@ on:
     paths:
       - charts/pyrra/Chart.yaml
       - charts/pyrra/crds/**
+      - charts/pyrra-crds/files/**
       - .github/workflows/crd-sync-check.yaml
 
 jobs:
@@ -41,3 +42,16 @@ jobs:
             exit 1
           fi
           echo "CRD is in sync with upstream ${app_version}."
+
+      - name: Compare pyrra-crds chart copy against pyrra chart
+        run: |
+          set -euo pipefail
+          main=charts/pyrra/crds/servicelevelobjectives.json
+          copy=charts/pyrra-crds/files/servicelevelobjectives.json
+          # pyrra-crds keeps the CRD pristine in files/ and injects the
+          # resource-policy annotation at render time, so this is a byte diff.
+          if ! diff -u "$main" "$copy"; then
+            echo "::error::${copy} is out of sync with ${main}. Copy it verbatim from the pyrra chart."
+            exit 1
+          fi
+          echo "pyrra-crds CRD is in sync with the pyrra chart."
