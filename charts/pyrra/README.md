@@ -123,6 +123,8 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | routePrefix | string | `""` | URL under which the pyrra web server is serving content. this can be set when running behind a reverse proxy. Must start with a slash and not end with a slash. |
 | securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | security context for each container |
 | service.annotations | object | `{}` | Annotations to add to the service |
+| service.ipFamilies | list | `[]` | Ordered list of IP families assigned to the service. Supported values: IPv4, IPv6. When using dual-stack, the first entry becomes the primary IP family. Leave empty to use the Kubernetes cluster default. |
+| service.ipFamilyPolicy | string | `""` | IP family policy for the service. Supported values: SingleStack, PreferDualStack, RequireDualStack. Leave empty to use the Kubernetes cluster default. |
 | service.nodePort | string | `""` | service nodePort to expose node port for HTTP, choose port between <30000-32767> |
 | service.operatorMetricsPort | int | `8080` | service port for operator metrics |
 | service.port | int | `9099` | service port for server |

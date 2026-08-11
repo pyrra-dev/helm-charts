@@ -105,6 +105,15 @@ service:
   nodePort: ""
   # -- service port for operator metrics
   operatorMetricsPort: 8080
+  # -- IP family policy for the service.
+  # Supported values: SingleStack, PreferDualStack, RequireDualStack.
+  # Leave empty to use the Kubernetes cluster default.
+  ipFamilyPolicy: ""
+  # -- Ordered list of IP families assigned to the service.
+  # Supported values: IPv4, IPv6.
+  # When using dual-stack, the first entry becomes the primary IP family.
+  # Leave empty to use the Kubernetes cluster default.
+  ipFamilies: []
 
 ingress:
   # -- enables ingress for server UI
