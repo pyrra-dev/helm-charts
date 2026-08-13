@@ -17,7 +17,7 @@ spec:
   {{- end }}
   {{- with .Values.service.ipFamilies }}
   ipFamilies:
-    {{- toYaml . | nindent 2 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   ports:
     - name: webhooks
