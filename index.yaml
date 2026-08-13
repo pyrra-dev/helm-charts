@@ -3,6 +3,18 @@ entries:
   pyrra:
   - apiVersion: v2
     appVersion: v0.10.1
+    created: "2026-08-13T15:38:29.717876869Z"
+    description: SLO manager and alert generator
+    digest: aea3f6a838dec6bf5ba3b2266fb1430f8582907a6952fe993dad5524905d8d4b
+    name: pyrra
+    sources:
+    - https://github.com/pyrra-dev/pyrra
+    type: application
+    urls:
+    - https://github.com/pyrra-dev/helm-charts/releases/download/pyrra-1.12.0/pyrra-1.12.0.tgz
+    version: 1.12.0
+  - apiVersion: v2
+    appVersion: v0.10.1
     created: "2026-07-22T12:35:19.505558813Z"
     description: SLO manager and alert generator
     digest: daa11500aad490d4a46a626516f252056d712d8708423767008835961649d462
@@ -398,4 +410,4 @@ entries:
     urls:
     - https://github.com/pyrra-dev/helm-charts/releases/download/pyrra-crds-0.1.0/pyrra-crds-0.1.0.tgz
     version: 0.1.0
-generated: "2026-07-22T12:35:19.505825065Z"
+generated: "2026-08-13T15:38:29.718032621Z"
