@@ -26,12 +26,51 @@ If Prometheus is behind authentication, set `prometheusBasicAuthUsername` and/or
 ```yaml
 prometheusBearerTokenPath: /etc/pyrra/prometheus/token
 extraApiVolumes:
-    - {name: prometheus-token, secret: {secretName: prometheus-token}}
+  - name: prometheus-token
+    secret:
+      secretName: prometheus-token
 extraApiVolumeMounts:
-    - {name: prometheus-token, mountPath: /etc/pyrra/prometheus, readOnly: true}
+  - name: prometheus-token
+    mountPath: /etc/pyrra/prometheus
+    readOnly: true
 ```
 
 There is no dedicated value for the HTTP basic-auth password: Pyrra only accepts it as a plain flag, which would land in the pod spec. If you need it, pass it through `extraApiArgs`.
+
+## Mimir
+
+There are two independent halves to running Pyrra against Mimir.
+
+**Querying** is the API container's job and needs nothing but a tenant: point `prometheusUrl` at the Mimir query endpoint and set `mimirOrgId` to send the `X-Scope-OrgID` header.
+
+**Provisioning rules** is the operator's job. Setting `mimir.url` switches it from creating `PrometheusRule` resources to writing recording rules directly to the Mimir Ruler. That single key gates the whole integration — there is no separate `enabled` flag, and any other `mimir.*` setting without a URL fails the render rather than being silently ignored.
+
+```yaml
+mimir:
+  url: http://mimir-nginx.mimir.svc:80
+  # standalone (default) or distributed — changes the endpoint Pyrra probes on startup
+  deploymentMode: standalone
+  # write alerting rules to the Ruler as well, not just recording rules
+  writeAlertingRules: true
+  orgId: my-tenant
+  basicAuth:
+    username: pyrra
+    existingSecret: mimir-credentials
+    existingSecretKey: password
+```
+
+`mimir.orgId` falls back to `mimirOrgId` when empty, since query and provisioning normally target the same tenant. Set it explicitly only if they differ.
+
+**Set a tenant unless you know Mimir runs without multi-tenancy.** Pyrra treats it as optional and simply omits the `X-Scope-OrgID` header when empty. Mimir defaults `-auth.multitenancy-enabled` to `true`, and its Ruler config endpoints (`POST`/`DELETE` on `<prefix>/config/v1/rules/{namespace}`) sit behind the auth middleware — so rule provisioning fails without the header. The endpoints Pyrra probes at startup do not: `/api/v1/status/buildinfo` is registered with auth explicitly disabled, and `/ready` is not registered through Mimir's API layer at all, so it never reaches the middleware that wraps those routes. The operator therefore starts up healthy in either deployment mode and only fails once it reconciles the first `ServiceLevelObjective`. If Mimir runs with `-auth.multitenancy-enabled=false` it uses the `-auth.no-auth-tenant` pseudo-tenant (`anonymous` by default) and leaving this empty is correct.
+
+### The basic-auth password
+
+Pyrra accepts the password only as a plain flag value and reads no environment variables, so the chart never writes it into the pod spec directly. It always goes through a Secret, mounted as an environment variable that Kubernetes expands into the `--mimir-basic-auth-password` argument. You choose where that Secret comes from:
+
+* **Bring your own** — set `basicAuth.existingSecret` (and `basicAuth.existingSecretKey` if the key differs from `mimir-basic-auth-password`). The password never passes through `values.yaml` or the Helm release, which is what you want with sealed-secrets, External Secrets Operator, or Vault.
+* **Let the chart render one** — set `basicAuth.password` and the chart creates `<fullname>-mimir-basic-auth`. Convenient for a quick test, but the value still lives in your values file and in the release, readable via `helm get values`. The pod gets a `checksum/mimir-basic-auth` annotation so rotating the password actually restarts the operator.
+
+The two are mutually exclusive; setting both fails the render rather than silently picking one.
 
 ## Linking alerts back to Pyrra
 
@@ -85,7 +124,16 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"ImplementationSpecific"` |  |
 | ingress.tls | list | `[]` |  |
-| mimirOrgId | string | `""` | Mimir tenant ID (X-Scope-OrgID) to send when querying Prometheus behind Mimir |
+| mimir.basicAuth.existingSecret | string | `""` | Name of an existing Secret holding the Mimir basic auth password, so the value never passes through Helm at all. Mutually exclusive with `password`. |
+| mimir.basicAuth.existingSecretKey | string | `"mimir-basic-auth-password"` | Key inside `existingSecret` holding the password. Only applies to `existingSecret`; the chart-rendered Secret always uses the key `mimir-basic-auth-password`. |
+| mimir.basicAuth.password | string | `""` | HTTP basic auth password for the Mimir API. The chart renders it into a `<fullname>-mimir-basic-auth` Secret rather than into the pod spec, but the value still passes through `values.yaml` and the Helm release. Prefer `existingSecret` in production. |
+| mimir.basicAuth.username | string | `""` | HTTP basic auth username for the Mimir API |
+| mimir.deploymentMode | string | `"standalone"` | Mimir deployment mode. One of `standalone`, `distributed`. |
+| mimir.orgId | string | `""` | Mimir tenant ID (X-Scope-OrgID) the operator sends when provisioning rules. Falls back to `mimirOrgId` when empty, since query and provisioning usually target the same tenant. |
+| mimir.prometheusPrefix | string | `"prometheus"` | Prefix of the Prometheus API in Mimir |
+| mimir.url | string | `""` | URL to the Mimir API. When set, the operator provisions recording rules via the Mimir Ruler instead of creating PrometheusRule resources. This single key gates the whole Mimir integration — there is no separate `enabled` flag. Note that Pyrra checks the connection on startup and exits if Mimir is unreachable, so the operator will CrashLoopBackOff on a wrong URL. |
+| mimir.writeAlertingRules | bool | `false` | Provision alerting rules to the Mimir Ruler as well, in addition to recording rules |
+| mimirOrgId | string | `""` | Mimir tenant ID (X-Scope-OrgID) the API container sends when querying Prometheus behind Mimir |
 | nameOverride | string | `""` | overrides chart name |
 | namespaceOverride | string | `""` | Overrides the namespace for all resources (defaults to .Release.Namespace) |
 | nodeSelector | object | `{}` | node selector for scheduling server pod |

@@ -12,9 +12,14 @@ spec:
       {{- include "pyrra.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- if or .Values.podAnnotations (include "pyrra.mimirBasicAuthChartManaged" .) }}
       annotations:
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if include "pyrra.mimirBasicAuthChartManaged" . }}
+        checksum/mimir-basic-auth: {{ .Values.mimir.basicAuth.password | sha256sum }}
+        {{- end }}
       {{- end }}
       labels:
         {{- include "pyrra.selectorLabels" . | nindent 8 }}

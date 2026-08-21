@@ -2,6 +2,17 @@
 Container definition for the Pyrra operator (kubernetes mode).
 */}}
 {{- define "pyrra.container.kubernetes" -}}
+{{- $mimir := .Values.mimir -}}
+{{- $mimirAuth := $mimir.basicAuth -}}
+{{- if and $mimirAuth.password $mimirAuth.existingSecret }}
+{{- fail "pyrra: mimir.basicAuth.password and mimir.basicAuth.existingSecret are mutually exclusive" }}
+{{- end }}
+{{- if and (not $mimir.url) (or $mimirAuth.username $mimirAuth.password $mimirAuth.existingSecret $mimir.writeAlertingRules) }}
+{{- fail "pyrra: mimir.* is configured but mimir.url is empty, so the whole Mimir integration stays off" }}
+{{- end }}
+{{- if and $mimir.url (not (has $mimir.deploymentMode (list "standalone" "distributed"))) }}
+{{- fail (printf "pyrra: mimir.deploymentMode must be either standalone or distributed, got %q" $mimir.deploymentMode) }}
+{{- end }}
 - name: {{ .Chart.Name }}-kubernetes
   securityContext:
     {{- toYaml .Values.securityContext | nindent 4 }}
@@ -25,9 +36,34 @@ Container definition for the Pyrra operator (kubernetes mode).
     {{- if .Values.externalUrl }}
     - --external-url={{ .Values.externalUrl }}
     {{- end }}
+    {{- if $mimir.url }}
+    - --mimir-url={{ $mimir.url }}
+    - --mimir-prometheus-prefix={{ $mimir.prometheusPrefix }}
+    - --mimir-deployment-mode={{ $mimir.deploymentMode }}
+    {{- if $mimir.writeAlertingRules }}
+    - --mimir-write-alerting-rules
+    {{- end }}
+    {{- with ($mimir.orgId | default .Values.mimirOrgId) }}
+    - --mimir-org-id={{ . }}
+    {{- end }}
+    {{- with $mimirAuth.username }}
+    - --mimir-basic-auth-username={{ . }}
+    {{- end }}
+    {{- if include "pyrra.mimirBasicAuthEnabled" . }}
+    - --mimir-basic-auth-password=$(PYRRA_MIMIR_BASIC_AUTH_PASSWORD)
+    {{- end }}
+    {{- end }}
     {{- with .Values.extraKubernetesArgs }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
+  {{- if include "pyrra.mimirBasicAuthEnabled" . }}
+  env:
+    - name: PYRRA_MIMIR_BASIC_AUTH_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: {{ include "pyrra.mimirBasicAuthSecretName" . }}
+          key: {{ include "pyrra.mimirBasicAuthSecretKey" . }}
+  {{- end }}
   resources:
     {{- toYaml .Values.operator.resources | nindent 4 }}
   {{- with .Values.operator.resizePolicy }}
