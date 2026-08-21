@@ -76,8 +76,37 @@ prometheusExternalUrl: ""
 prometheusBasicAuthUsername: ""
 # -- Path to a bearer token file for querying Prometheus. Mount the file via extraApiVolumes/extraApiVolumeMounts. For the basic auth password, use extraApiArgs, since Pyrra only accepts it as a plain flag value.
 prometheusBearerTokenPath: ""
-# -- Mimir tenant ID (X-Scope-OrgID) to send when querying Prometheus behind Mimir
+# -- Mimir tenant ID (X-Scope-OrgID) the API container sends when querying Prometheus behind Mimir
 mimirOrgId: ""
+
+mimir:
+  # -- URL to the Mimir API. When set, the operator provisions recording rules via the Mimir Ruler
+  # instead of creating PrometheusRule resources. This single key gates the whole Mimir integration —
+  # there is no separate `enabled` flag. Note that Pyrra checks the connection on startup and exits
+  # if Mimir is unreachable, so the operator will CrashLoopBackOff on a wrong URL.
+  url: ""
+  # -- Prefix of the Prometheus API in Mimir
+  prometheusPrefix: prometheus
+  # -- Mimir deployment mode. One of `standalone`, `distributed`.
+  deploymentMode: standalone
+  # -- Provision alerting rules to the Mimir Ruler as well, in addition to recording rules
+  writeAlertingRules: false
+  # -- Mimir tenant ID (X-Scope-OrgID) the operator sends when provisioning rules. Falls back to
+  # `mimirOrgId` when empty, since query and provisioning usually target the same tenant.
+  orgId: ""
+  basicAuth:
+    # -- HTTP basic auth username for the Mimir API
+    username: ""
+    # -- HTTP basic auth password for the Mimir API. The chart renders it into a
+    # `<fullname>-mimir-basic-auth` Secret rather than into the pod spec, but the value still passes
+    # through `values.yaml` and the Helm release. Prefer `existingSecret` in production.
+    password: ""
+    # -- Name of an existing Secret holding the Mimir basic auth password, so the value never passes
+    # through Helm at all. Mutually exclusive with `password`.
+    existingSecret: ""
+    # -- Key inside `existingSecret` holding the password. Only applies to `existingSecret`; the
+    # chart-rendered Secret always uses the key `mimir-basic-auth-password`.
+    existingSecretKey: mimir-basic-auth-password
 
 # -- URL to redirect users to the Grafana Explore page instead of Prometheus. Mutually exclusive with prometheusExternalUrl.
 grafanaExternalUrl: ""

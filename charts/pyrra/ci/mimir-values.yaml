@@ -1,0 +1,19 @@
+mimir:
+  url: http://mimir-stub.mimir-stub.svc:8080
+  prometheusPrefix: prometheus
+  deploymentMode: standalone
+  writeAlertingRules: true
+  orgId: ci-tenant
+  basicAuth:
+    username: ci
+    existingSecret: mimir-stub-auth
+    existingSecretKey: password
+
+extraObjects:
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: mimir-stub-auth
+    stringData:
+      # dummy credential for CI only
+      password: not-a-real-password

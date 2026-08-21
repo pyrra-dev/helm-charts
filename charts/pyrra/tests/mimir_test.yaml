@@ -1,0 +1,228 @@
+suite: mimir
+templates:
+  - templates/deployment.yaml
+tests:
+  - it: should not add any Mimir arg to the operator by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-url=
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-prometheus-prefix=prometheus
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-deployment-mode=standalone
+      - isNull:
+          path: spec.template.spec.containers[0].env
+
+  - it: should render the Mimir flags on the operator when a url is set
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-url=http://mimir.mimir.svc:8080
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-prometheus-prefix=prometheus
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-deployment-mode=standalone
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-write-alerting-rules
+
+  - it: should not leak Mimir flags into the API container
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.basicAuth.username: user
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[1].args
+          content: --mimir-url=http://mimir.mimir.svc:8080
+      - notContains:
+          path: spec.template.spec.containers[1].args
+          content: --mimir-basic-auth-username=user
+
+  - it: should honour prometheusPrefix, deploymentMode and writeAlertingRules
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.prometheusPrefix: prom
+      mimir.deploymentMode: distributed
+      mimir.writeAlertingRules: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-prometheus-prefix=prom
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-deployment-mode=distributed
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-write-alerting-rules
+
+  - it: should send the operator org id when set explicitly
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.orgId: tenant-a
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-org-id=tenant-a
+
+  - it: should fall back to mimirOrgId for the operator org id
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimirOrgId: tenant-b
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-org-id=tenant-b
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --mimir-org-id=tenant-b
+
+  - it: should prefer mimir.orgId over mimirOrgId for the operator only
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.orgId: tenant-a
+      mimirOrgId: tenant-b
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-org-id=tenant-a
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --mimir-org-id=tenant-b
+
+  - it: should send no org id when neither is set
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-org-id=
+
+  - it: should never put a plaintext password into the pod spec
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.basicAuth.username: user
+      mimir.basicAuth.password: s3cr3t
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-basic-auth-username=user
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-basic-auth-password=$(PYRRA_MIMIR_BASIC_AUTH_PASSWORD)
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-basic-auth-password=s3cr3t
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PYRRA_MIMIR_BASIC_AUTH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-pyrra-mimir-basic-auth
+                key: mimir-basic-auth-password
+
+  - it: should roll the pod when the chart-managed password changes
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.basicAuth.password: s3cr3t
+    asserts:
+      - exists:
+          path: spec.template.metadata.annotations["checksum/mimir-basic-auth"]
+
+  - it: should not add a checksum annotation when the user brings their own secret
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.basicAuth.existingSecret: mimir-auth
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/mimir-basic-auth"]
+
+  - it: should ignore existingSecretKey for the chart-rendered secret
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.basicAuth.password: s3cr3t
+      mimir.basicAuth.existingSecretKey: ignored-key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PYRRA_MIMIR_BASIC_AUTH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-pyrra-mimir-basic-auth
+                key: mimir-basic-auth-password
+
+  - it: should inject an existing secret via an env var instead of a literal arg
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.basicAuth.username: user
+      mimir.basicAuth.existingSecret: mimir-auth
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-basic-auth-password=$(PYRRA_MIMIR_BASIC_AUTH_PASSWORD)
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PYRRA_MIMIR_BASIC_AUTH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mimir-auth
+                key: mimir-basic-auth-password
+
+  - it: should honour a custom existingSecretKey
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.basicAuth.existingSecret: mimir-auth
+      mimir.basicAuth.existingSecretKey: mimir-password
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PYRRA_MIMIR_BASIC_AUTH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mimir-auth
+                key: mimir-password
+
+  - it: should keep the Mimir flags overridable through extraKubernetesArgs
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      extraKubernetesArgs:
+        - --mimir-deployment-mode=distributed
+    asserts:
+      # the user's arg must come last so kong's last-wins behaviour honours it
+      - equal:
+          path: spec.template.spec.containers[0].args[-1]
+          value: --mimir-deployment-mode=distributed
+
+  - it: should fail when both a plaintext password and an existingSecret are set
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.basicAuth.password: s3cr3t
+      mimir.basicAuth.existingSecret: mimir-auth
+    asserts:
+      - failedTemplate:
+          errorMessage: "pyrra: mimir.basicAuth.password and mimir.basicAuth.existingSecret are mutually exclusive"
+
+  - it: should fail when Mimir settings are given without a url
+    set:
+      mimir.basicAuth.username: user
+    asserts:
+      - failedTemplate:
+          errorMessage: "pyrra: mimir.* is configured but mimir.url is empty, so the whole Mimir integration stays off"
+
+  - it: should fail on an unsupported deployment mode
+    set:
+      mimir.url: http://mimir.mimir.svc:8080
+      mimir.deploymentMode: monolithic
+    asserts:
+      - failedTemplate:
+          errorMessage: 'pyrra: mimir.deploymentMode must be either standalone or distributed, got "monolithic"'

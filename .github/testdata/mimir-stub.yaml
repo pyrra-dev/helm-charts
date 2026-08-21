@@ -1,0 +1,77 @@
+# Minimal stand-in for a Mimir API, deployed into the kind cluster before `ct install`.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mimir-stub
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mimir-stub
+  namespace: mimir-stub
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      location /ready {
+        return 200 "ready\n";
+      }
+      location / {
+        return 404;
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mimir-stub
+  namespace: mimir-stub
+  labels:
+    app.kubernetes.io/name: mimir-stub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mimir-stub
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mimir-stub
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/nginx/conf.d
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+      volumes:
+        - name: conf
+          configMap:
+            name: mimir-stub
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mimir-stub
+  namespace: mimir-stub
+spec:
+  selector:
+    app.kubernetes.io/name: mimir-stub
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

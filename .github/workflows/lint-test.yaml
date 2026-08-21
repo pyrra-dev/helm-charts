@@ -115,6 +115,12 @@ jobs:
           helm install prometheus-operator-crds oci://ghcr.io/prometheus-community/charts/prometheus-operator-crds
         if: steps.list-changed.outputs.changed == 'true'
 
+      - name: Deploy Mimir stub
+        run: |
+          kubectl apply -f .github/testdata/mimir-stub.yaml
+          kubectl --namespace mimir-stub rollout status deployment/mimir-stub --timeout=120s
+        if: steps.list-changed.outputs.changed == 'true'
+
       - name: Run chart-testing (install)
         run: ct install --config .github/linters/ct.yaml
 
