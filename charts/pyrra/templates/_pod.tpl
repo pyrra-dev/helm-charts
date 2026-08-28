@@ -94,6 +94,9 @@ Container definition for the Pyrra API server.
 {{- end }}
 {{- if and .Values.grafanaExternalDatasourceId (not .Values.grafanaExternalUrl) }}
 {{- fail "pyrra: grafanaExternalDatasourceId requires grafanaExternalUrl to be set" }}
+{{- end }}
+{{- if and (not .Values.openshift.enabled) (or .Values.openshift.oauth.enabled .Values.openshift.route.enabled) }}
+{{- fail "pyrra: openshift.oauth/route are configured but openshift.enabled is false, so the whole OpenShift integration stays off" }}
 {{- end -}}
 - name: {{ .Chart.Name }}
   securityContext:
@@ -128,6 +131,12 @@ Container definition for the Pyrra API server.
     {{- if .Values.routePrefix }}
     - --route-prefix={{ .Values.routePrefix }}
     {{- end }}
+    {{- if .Values.openshift.enabled }}
+    - --tls-client-ca-file=/etc/tls/openshift-service-ca.crt/service-ca.crt
+    {{- if not .Values.prometheusBearerTokenPath }}
+    - --prometheus-bearer-token-path=/var/run/secrets/kubernetes.io/serviceaccount/token
+    {{- end }}
+    {{- end }}
     {{- with .Values.extraApiArgs }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -139,11 +148,93 @@ Container definition for the Pyrra API server.
   {{- end }}
   ports:
     - name: http
-      containerPort: 9099
-  {{- if .Values.extraApiVolumeMounts }}
+      containerPort: {{ include "pyrra.apiPort" . }}
+  {{- if or .Values.openshift.enabled .Values.extraApiVolumeMounts }}
   volumeMounts:
+    {{- if .Values.openshift.enabled }}
+    - name: openshift-service-ca-crt
+      mountPath: /etc/tls/openshift-service-ca.crt
+    {{- end }}
     {{- with .Values.extraApiVolumeMounts }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
   {{- end }}
+{{- end }}
+
+{{/*
+Container definition for the OpenShift OAuth proxy sidecar.
+*/}}
+{{- define "pyrra.container.openshiftOauthProxy" -}}
+{{- $oauth := .Values.openshift.oauth -}}
+{{- if or (not $oauth.image.repository) (not $oauth.image.tag) -}}
+{{- fail "openshift.oauth.image.repository and openshift.oauth.image.tag are required when openshift.oauth.enabled=true" -}}
+{{- end -}}
+{{- if not $oauth.emailDomains -}}
+{{- fail "openshift.oauth.emailDomains is required when openshift.oauth.enabled=true — without an -email-domain flag the proxy rejects every login while staying Ready" -}}
+{{- end -}}
+{{- if and .Values.openshift.route.enabled (not .Values.serviceAccount.create) -}}
+{{- fail "pyrra: the OAuth redirect annotation lives on the chart-managed ServiceAccount, so openshift.oauth.enabled with openshift.route.enabled requires serviceAccount.create=true" -}}
+{{- end -}}
+- name: oauth-proxy
+  resources:
+    {{- toYaml $oauth.resources | nindent 4 }}
+  securityContext:
+    {{- toYaml $oauth.securityContext | nindent 4 }}
+  image: "{{ $oauth.image.repository }}:{{ $oauth.image.tag }}"
+  imagePullPolicy: {{ $oauth.image.pullPolicy }}
+  ports:
+    - name: {{ include "pyrra.openshiftOauthPortName" . }}
+      containerPort: {{ $oauth.port }}
+      protocol: TCP
+  volumeMounts:
+    - name: session-secret
+      mountPath: /etc/proxy/secrets
+      readOnly: true
+    - name: injected-certs
+      mountPath: /etc/proxy/certs
+      readOnly: true
+    {{- if $oauth.tls }}
+    - name: proxy-tls
+      mountPath: /etc/tls/private
+      readOnly: true
+    {{- end }}
+  args:
+    - "-provider=openshift"
+    - "-pass-basic-auth=false"
+    {{- if $oauth.tls }}
+    - "-https-address=:{{ $oauth.port }}"
+    - "-http-address="
+    {{- else }}
+    - "-http-address=:{{ $oauth.port }}"
+    {{- end }}
+    {{- range $oauth.emailDomains }}
+    - "-email-domain={{ . }}"
+    {{- end }}
+    {{- with $oauth.sar }}
+    - '-openshift-sar={{ toJson . }}'
+    {{- end }}
+    - "-upstream=http://localhost:{{ include "pyrra.apiPort" . }}"
+    - "-client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token"
+    - "-cookie-secret-file=/etc/proxy/secrets/session_secret"
+    - "-openshift-service-account={{ include "pyrra.serviceAccountName" . }}"
+    - "-openshift-ca=/etc/pki/tls/cert.pem"
+    - "-openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+    - "-openshift-ca=/etc/proxy/certs/ca-bundle.crt"
+    {{- if $oauth.tls }}
+    - "-tls-cert=/etc/tls/private/tls.crt"
+    - "-tls-key=/etc/tls/private/tls.key"
+    {{- end }}
+    {{- with $oauth.extraArgs }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  livenessProbe:
+    httpGet:
+      path: /oauth/healthz
+      port: {{ include "pyrra.openshiftOauthPortName" . }}
+      scheme: {{ if $oauth.tls }}HTTPS{{ else }}HTTP{{ end }}
+  readinessProbe:
+    httpGet:
+      path: /oauth/healthz
+      port: {{ include "pyrra.openshiftOauthPortName" . }}
+      scheme: {{ if $oauth.tls }}HTTPS{{ else }}HTTP{{ end }}
 {{- end }}
