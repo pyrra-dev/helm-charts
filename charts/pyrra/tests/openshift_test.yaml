@@ -1,0 +1,578 @@
+suite: openshift
+templates:
+  - templates/deployment.yaml
+  - templates/clusterrole.yaml
+  - templates/service.yaml
+  - templates/serviceaccount.yaml
+  - templates/openshift/route.yaml
+  - templates/openshift/secrets.yaml
+  - templates/openshift/configmap.yaml
+  - templates/openshift/clusterrolebinding.yaml
+tests:
+  - it: should not render OpenShift-only resources by default
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/openshift/route.yaml
+      - hasDocuments:
+          count: 0
+        template: templates/openshift/secrets.yaml
+      - hasDocuments:
+          count: 0
+        template: templates/openshift/configmap.yaml
+      - hasDocuments:
+          count: 0
+        template: templates/openshift/clusterrolebinding.yaml
+
+  - it: should add TLS flags, CA mount and cluster-monitoring-view binding when openshift is enabled
+    set:
+      openshift.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --tls-client-ca-file=/etc/tls/openshift-service-ca.crt/service-ca.crt
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --prometheus-bearer-token-path=/var/run/secrets/kubernetes.io/serviceaccount/token
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: openshift-service-ca-crt
+            mountPath: /etc/tls/openshift-service-ca.crt
+        template: templates/deployment.yaml
+      - hasDocuments:
+          count: 1
+        template: templates/openshift/clusterrolebinding.yaml
+      - equal:
+          path: roleRef.name
+          value: cluster-monitoring-view
+        template: templates/openshift/clusterrolebinding.yaml
+      - equal:
+          path: subjects[0].name
+          value: RELEASE-NAME-pyrra
+        template: templates/openshift/clusterrolebinding.yaml
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - namespaces
+            verbs:
+              - get
+              - list
+              - watch
+        template: templates/clusterrole.yaml
+
+  - it: should keep extraApiArgs last and honor prometheusBearerTokenPath on OpenShift
+    set:
+      openshift.enabled: true
+      prometheusBearerTokenPath: /etc/mytoken/token
+      extraApiArgs:
+        - --tls-client-ca-file=/etc/my/ca.crt
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].args
+          content: --prometheus-bearer-token-path=/etc/mytoken/token
+        template: templates/deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[1].args
+          content: --prometheus-bearer-token-path=/var/run/secrets/kubernetes.io/serviceaccount/token
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[1].args[4]
+          value: --tls-client-ca-file=/etc/tls/openshift-service-ca.crt/service-ca.crt
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[1].args[5]
+          value: --tls-client-ca-file=/etc/my/ca.crt
+        template: templates/deployment.yaml
+
+  - it: should not render injected-certs ConfigMap or session Secret when only openshift.enabled is set
+    set:
+      openshift.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/openshift/configmap.yaml
+      - hasDocuments:
+          count: 0
+        template: templates/openshift/secrets.yaml
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 2
+        template: templates/deployment.yaml
+
+  - it: should render the OAuth-proxy stack when oauth is enabled with TLS
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.emailDomains: ["*"]
+      openshift.oauth.sessionSecret: secret
+      openshift.route.enabled: true
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 3
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[2].name
+          value: oauth-proxy
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[2].image
+          value: "quay.io/openshift/origin-oauth-proxy:4.16"
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[2].imagePullPolicy
+          value: IfNotPresent
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[2].ports[0].name
+          value: oauth-https
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[2].ports[0].containerPort
+          value: 9091
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -https-address=:9091
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -openshift-service-account=RELEASE-NAME-pyrra
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -upstream=http://localhost:9099
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -email-domain=*
+        template: templates/deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[2].args
+          content: -openshift-sar={"resource":"namespaces","verb":"get"}
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[2].livenessProbe.httpGet.path
+          value: /oauth/healthz
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[2].livenessProbe.httpGet.port
+          value: oauth-https
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[2].livenessProbe.httpGet.scheme
+          value: HTTPS
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[2].readinessProbe.httpGet.port
+          value: oauth-https
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: session-secret
+            secret:
+              secretName: RELEASE-NAME-pyrra-session
+              items:
+                - key: session_secret
+                  path: session_secret
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: injected-certs
+            configMap:
+              name: RELEASE-NAME-pyrra-injected-certs
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: proxy-tls
+            secret:
+              secretName: RELEASE-NAME-pyrra-tls
+        template: templates/deployment.yaml
+      - exists:
+          path: spec.template.metadata.annotations["checksum/oauth-session-secret"]
+        template: templates/deployment.yaml
+      - hasDocuments:
+          count: 1
+        template: templates/openshift/configmap.yaml
+      - hasDocuments:
+          count: 1
+        template: templates/openshift/secrets.yaml
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-pyrra-session
+        template: templates/openshift/secrets.yaml
+      - equal:
+          path: metadata.annotations["service.beta.openshift.io/serving-cert-secret-name"]
+          value: RELEASE-NAME-pyrra-tls
+        template: templates/service.yaml
+      - lengthEqual:
+          path: spec.ports
+          count: 5
+        template: templates/service.yaml
+      - equal:
+          path: spec.ports[0].name
+          value: webhooks
+        template: templates/service.yaml
+      - equal:
+          path: spec.ports[3].name
+          value: oauth-https
+        template: templates/service.yaml
+      - equal:
+          path: spec.ports[3].port
+          value: 9091
+        template: templates/service.yaml
+      - matchRegex:
+          path: metadata.annotations["serviceaccounts.openshift.io/oauth-redirectreference.primary"]
+          pattern: '"name":"RELEASE-NAME-pyrra"'
+        template: templates/serviceaccount.yaml
+      - contains:
+          path: rules
+          content:
+            verbs:
+              - create
+            apiGroups:
+              - authentication.k8s.io
+            resources:
+              - tokenreviews
+        template: templates/clusterrole.yaml
+
+  - it: should fail when openshift is enabled with neither serviceAccount.create nor an explicit name
+    set:
+      openshift.enabled: true
+      serviceAccount.create: false
+    template: templates/openshift/clusterrolebinding.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: binds cluster-monitoring-view to the release ServiceAccount
+
+  - it: should bind cluster-monitoring-view to an explicitly named external ServiceAccount
+    set:
+      openshift.enabled: true
+      serviceAccount.create: false
+      serviceAccount.name: my-sa
+    template: templates/openshift/clusterrolebinding.yaml
+    asserts:
+      - equal:
+          path: subjects[0].name
+          value: my-sa
+
+  - it: should fail when oauth and Route are enabled without a chart-managed ServiceAccount
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.emailDomains: ["*"]
+      openshift.oauth.sessionSecret: secret
+      openshift.route.enabled: true
+      serviceAccount.create: false
+      serviceAccount.name: my-sa
+    template: templates/deployment.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: requires serviceAccount.create=true
+
+  - it: should fail when oauth or Route is enabled without openshift.enabled
+    set:
+      openshift.oauth.enabled: true
+      openshift.route.enabled: true
+    template: templates/deployment.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: openshift.enabled is false, so the whole OpenShift integration stays off
+
+  - it: should fail when oauth is enabled with empty emailDomains
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.sessionSecret: secret
+    template: templates/deployment.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: openshift.oauth.emailDomains is required
+
+  - it: should render -openshift-sar from openshift.oauth.sar
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.emailDomains: ["*"]
+      openshift.oauth.sessionSecret: secret
+      openshift.oauth.sar:
+        resource: namespaces
+        verb: get
+    template: templates/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -openshift-sar={"resource":"namespaces","verb":"get"}
+
+  - it: should fail when oauth is enabled without an image repository
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.sessionSecret: secret
+    template: templates/deployment.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: openshift.oauth.image.repository and openshift.oauth.image.tag are required
+
+  - it: should fail when oauth is enabled without a session secret
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.emailDomains: ["*"]
+    template: templates/openshift/secrets.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: openshift.oauth.sessionSecret
+
+  - it: should render configured emailDomains and extraArgs on the oauth-proxy
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.sessionSecret: secret
+      openshift.oauth.emailDomains:
+        - example.com
+        - example.org
+      openshift.oauth.extraArgs:
+        - -skip-auth-regex=^/metrics$
+    template: templates/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -email-domain=example.com
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -email-domain=example.org
+      - notContains:
+          path: spec.template.spec.containers[2].args
+          content: -email-domain=*
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -skip-auth-regex=^/metrics$
+
+  - it: should switch the OAuth-proxy to HTTP and the Route to Edge when tls is disabled
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.emailDomains: ["*"]
+      openshift.oauth.sessionSecret: secret
+      openshift.oauth.tls: false
+      openshift.route.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[2].ports[0].name
+          value: oauth-http
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -http-address=:9091
+        template: templates/deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[2].args
+          content: -https-address=:9091
+        template: templates/deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[2].args
+          content: -tls-cert=/etc/tls/private/tls.crt
+        template: templates/deployment.yaml
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: proxy-tls
+            secret:
+              secretName: RELEASE-NAME-pyrra-tls
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[2].livenessProbe.httpGet.scheme
+          value: HTTP
+        template: templates/deployment.yaml
+      - isNull:
+          path: metadata.annotations
+        template: templates/service.yaml
+      - equal:
+          path: spec.ports[3].name
+          value: oauth-http
+        template: templates/service.yaml
+      - equal:
+          path: spec.tls.termination
+          value: Edge
+        template: templates/openshift/route.yaml
+      - equal:
+          path: spec.port.targetPort
+          value: oauth-http
+        template: templates/openshift/route.yaml
+
+  - it: should honor a custom OAuth-proxy port
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.emailDomains: ["*"]
+      openshift.oauth.sessionSecret: secret
+      openshift.oauth.port: 8443
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[2].ports[0].containerPort
+          value: 8443
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[2].args
+          content: -https-address=:8443
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.ports[3].port
+          value: 8443
+        template: templates/service.yaml
+
+  - it: should honor a custom image pullPolicy
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.emailDomains: ["*"]
+      openshift.oauth.image.pullPolicy: Always
+      openshift.oauth.sessionSecret: secret
+    template: templates/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[2].imagePullPolicy
+          value: Always
+
+  - it: should use an existing secret when set and skip rendering the session Secret
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.emailDomains: ["*"]
+      openshift.oauth.existingSecret: my-oauth-secret
+      openshift.oauth.existingSecretKey: my-key
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/openshift/secrets.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: session-secret
+            secret:
+              secretName: my-oauth-secret
+              items:
+                - key: my-key
+                  path: session_secret
+        template: templates/deployment.yaml
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/oauth-session-secret"]
+        template: templates/deployment.yaml
+
+  - it: should render an OpenShift Route with Edge termination when oauth is disabled
+    set:
+      openshift.enabled: true
+      openshift.route.enabled: true
+    template: templates/openshift/route.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Route
+      - equal:
+          path: spec.tls.termination
+          value: Edge
+      - equal:
+          path: spec.port.targetPort
+          value: http
+      - notExists:
+          path: spec.subdomain
+      - notExists:
+          path: spec.host
+
+  - it: should honor custom Route subdomain and host
+    set:
+      openshift.enabled: true
+      openshift.route.enabled: true
+      openshift.route.subdomain: pyrra
+      openshift.route.host: pyrra.example.com
+    template: templates/openshift/route.yaml
+    asserts:
+      - equal:
+          path: spec.subdomain
+          value: pyrra
+      - equal:
+          path: spec.host
+          value: pyrra.example.com
+
+  - it: should ignore existingSecretKey when existingSecret is not set
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.emailDomains: ["*"]
+      openshift.oauth.sessionSecret: secret
+      openshift.oauth.existingSecretKey: cookie
+    template: templates/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: session-secret
+            secret:
+              secretName: RELEASE-NAME-pyrra-session
+              items:
+                - key: session_secret
+                  path: session_secret
+
+  - it: should not render the redirect annotation when the Route is disabled
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.emailDomains: ["*"]
+      openshift.oauth.sessionSecret: secret
+    template: templates/serviceaccount.yaml
+    asserts:
+      - notExists:
+          path: metadata.annotations
+
+  - it: should render an OpenShift Route with Reencrypt termination when oauth is enabled
+    set:
+      openshift.enabled: true
+      openshift.oauth.enabled: true
+      openshift.oauth.image.repository: quay.io/openshift/origin-oauth-proxy
+      openshift.oauth.image.tag: "4.16"
+      openshift.oauth.emailDomains: ["*"]
+      openshift.oauth.sessionSecret: secret
+      openshift.route.enabled: true
+    template: templates/openshift/route.yaml
+    asserts:
+      - equal:
+          path: spec.tls.termination
+          value: Reencrypt
+      - equal:
+          path: spec.port.targetPort
+          value: oauth-https

@@ -58,3 +58,27 @@ rules:
   - update
   - watch
 {{- end }}
+{{- if .Values.openshift.enabled }}
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+{{- if .Values.openshift.oauth.enabled }}
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+{{- end }}
+{{- end }}
