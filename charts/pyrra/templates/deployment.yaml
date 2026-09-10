@@ -12,13 +12,18 @@ spec:
       {{- include "pyrra.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- if or .Values.podAnnotations (include "pyrra.mimirBasicAuthChartManaged" .) }}
+      {{- if or .Values.podAnnotations
+        (include "pyrra.mimirBasicAuthChartManaged" .)
+        (include "pyrra.openshiftOauthSessionChartManaged" .) }}
       annotations:
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- if include "pyrra.mimirBasicAuthChartManaged" . }}
         checksum/mimir-basic-auth: {{ .Values.mimir.basicAuth.password | sha256sum }}
+        {{- end }}
+        {{- if include "pyrra.openshiftOauthSessionChartManaged" . }}
+        checksum/oauth-session-secret: {{ .Values.openshift.oauth.sessionSecret | sha256sum }}
         {{- end }}
       {{- end }}
       labels:
@@ -38,6 +43,9 @@ spec:
       containers:
         {{- include "pyrra.container.kubernetes" . | nindent 8 }}
         {{- include "pyrra.container.api" . | nindent 8 }}
+        {{- if and .Values.openshift.enabled .Values.openshift.oauth.enabled }}
+        {{- include "pyrra.container.openshiftOauthProxy" . | nindent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -50,12 +58,34 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if or .Values.extraApiVolumes (and .Values.validatingWebhookConfiguration.enabled ($.Capabilities.APIVersions.Has "cert-manager.io/v1")) }}
+      {{- if or .Values.extraApiVolumes .Values.openshift.enabled
+        (and .Values.validatingWebhookConfiguration.enabled ($.Capabilities.APIVersions.Has "cert-manager.io/v1")) }}
       volumes:
         {{- if and .Values.validatingWebhookConfiguration.enabled ($.Capabilities.APIVersions.Has "cert-manager.io/v1") }}
         - name: certs
           secret:
             secretName: {{ include "pyrra.fullname" . }}-webhook-validation
+        {{- end }}
+        {{- if .Values.openshift.enabled }}
+        - name: openshift-service-ca-crt
+          configMap:
+            name: openshift-service-ca.crt
+        {{- if .Values.openshift.oauth.enabled }}
+        - name: session-secret
+          secret:
+            secretName: {{ include "pyrra.openshiftOauthSessionSecretName" . }}
+            items:
+              - key: {{ include "pyrra.openshiftOauthSessionSecretKey" . }}
+                path: session_secret
+        - name: injected-certs
+          configMap:
+            name: {{ include "pyrra.fullname" . }}-injected-certs
+        {{- if .Values.openshift.oauth.tls }}
+        - name: proxy-tls
+          secret:
+            secretName: {{ include "pyrra.fullname" . }}-tls
+        {{- end }}
+        {{- end }}
         {{- end }}
         {{- with .Values.extraApiVolumes }}
         {{- toYaml . | nindent 8 }}

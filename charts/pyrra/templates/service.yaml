@@ -4,9 +4,14 @@ kind: Service
 metadata:
   name: {{ include "pyrra.fullname" . }}
   namespace: {{ include "pyrra.namespace" . }}
-  {{- with .Values.service.annotations }}
+  {{- if or .Values.service.annotations (and .Values.openshift.enabled .Values.openshift.oauth.enabled .Values.openshift.oauth.tls) }}
   annotations:
+    {{- with .Values.service.annotations }}
     {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if and .Values.openshift.enabled .Values.openshift.oauth.enabled .Values.openshift.oauth.tls }}
+    service.beta.openshift.io/serving-cert-secret-name: {{ include "pyrra.fullname" . }}-tls
+    {{- end }}
   {{- end }}
   labels:
     {{- include "pyrra.labels" . | nindent 4 }}
@@ -30,6 +35,10 @@ spec:
       {{- if .Values.service.nodePort }}
       nodePort: {{ .Values.service.nodePort }}
       {{- end }}
+    {{- if and .Values.openshift.enabled .Values.openshift.oauth.enabled }}
+    - name: {{ include "pyrra.openshiftOauthPortName" . }}
+      port: {{ .Values.openshift.oauth.port }}
+    {{- end }}
     - name: op-metrics
       port: {{ .Values.service.operatorMetricsPort }}
       targetPort: {{ include "pyrra.operatorMetricsPort" . }}

@@ -117,3 +117,49 @@ the chart-rendered one always uses a fixed key.
 mimir-basic-auth-password
 {{- end -}}
 {{- end }}
+
+{{/*
+Internal port the Pyrra API container listens on. Used both by the api
+container's containerPort and by the OpenShift OAuth-proxy upstream URL.
+*/}}
+{{- define "pyrra.apiPort" -}}9099{{- end }}
+
+{{/*
+Name of the OAuth-proxy port. Ties together the container port, the Service
+port, the Route targetPort and the probes — all of which match by name.
+*/}}
+{{- define "pyrra.openshiftOauthPortName" -}}
+{{- if .Values.openshift.oauth.tls -}}oauth-https{{- else -}}oauth-http{{- end -}}
+{{- end }}
+
+{{/*
+Whether this chart renders the OAuth-proxy session Secret itself, as opposed
+to the user bringing their own via existingSecret.
+*/}}
+{{- define "pyrra.openshiftOauthSessionChartManaged" -}}
+{{- if and .Values.openshift.enabled .Values.openshift.oauth.enabled (not .Values.openshift.oauth.existingSecret) -}}true{{- end -}}
+{{- end }}
+
+{{/*
+OpenShift OAuth-proxy session Secret name. Resolves to the user-provided
+existingSecret when set, otherwise to <fullname>-session.
+*/}}
+{{- define "pyrra.openshiftOauthSessionSecretName" -}}
+{{- if .Values.openshift.oauth.existingSecret -}}
+{{- .Values.openshift.oauth.existingSecret -}}
+{{- else -}}
+{{ include "pyrra.fullname" . }}-session
+{{- end -}}
+{{- end }}
+
+{{/*
+Key inside that Secret. existingSecretKey only applies to a user-provided Secret;
+the chart-rendered one always uses a fixed key.
+*/}}
+{{- define "pyrra.openshiftOauthSessionSecretKey" -}}
+{{- if .Values.openshift.oauth.existingSecret -}}
+{{- .Values.openshift.oauth.existingSecretKey | default "session_secret" -}}
+{{- else -}}
+session_secret
+{{- end -}}
+{{- end }}

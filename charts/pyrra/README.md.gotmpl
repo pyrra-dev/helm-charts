@@ -90,6 +90,44 @@ If the SLO object is invalid, the admission controller will reject the request a
 Pyrra provides Grafana dashboards additionally to it's own UI.
 The dashboards can be deployed using a ConfigMap and get's automatically [reloaded by a Grafana sidecar](https://github.com/grafana/helm-charts/tree/main/charts/grafana#sidecar-for-dashboards).
 
+## OpenShift
+
+The chart can be deployed on OpenShift / OKD clusters. Enable it with `openshift.enabled=true`. When enabled the chart:
+
+* mounts the cluster-injected `openshift-service-ca.crt` ConfigMap into the API container and passes `--tls-client-ca-file` plus `--prometheus-bearer-token-path` so Pyrra can talk to the cluster-monitoring stack (for example `thanos-querier`).
+* binds the ServiceAccount to the built-in OpenShift `cluster-monitoring-view` ClusterRole and grants `namespaces: get/list/watch` on the chart's own ClusterRole.
+
+Optionally, set `openshift.oauth.enabled=true` to add an `oauth-proxy` sidecar that protects the UI with OpenShift OAuth. This:
+
+* runs `openshift/oauth-proxy` (set `openshift.oauth.image.repository` and `openshift.oauth.image.tag`; resources, securityContext and `imagePullPolicy` are configurable via the corresponding `openshift.oauth.*` keys).
+* listens on `openshift.oauth.port` (default `9091`).
+* terminates TLS by default (`openshift.oauth.tls=true`): the chart requests a serving certificate via the `service.beta.openshift.io/serving-cert-secret-name` Service annotation and the Route uses `Reencrypt` termination. Set `openshift.oauth.tls=false` to run the proxy on plain HTTP behind an `Edge`-terminated Route instead.
+* adds the ServiceAccount OAuth redirect reference annotation (when `openshift.route.enabled=true`) and the `tokenreviews` / `subjectaccessreviews` RBAC needed by the proxy.
+* requires a session secret: point `openshift.oauth.existingSecret` at a pre-created Secret (key configurable via `openshift.oauth.existingSecretKey`, default `session_secret`) — recommended, the value never passes through the values file or the Helm release. Alternatively set `openshift.oauth.sessionSecret` (plaintext, rendered into a `<release>-session` Secret) for a quick start.
+* accepts only the email domains listed in `openshift.oauth.emailDomains` (required — use `["*"]` to accept any domain); pass extra proxy flags through `openshift.oauth.extraArgs`.
+* optionally authorizes users beyond authentication: set `openshift.oauth.sar` to a SubjectAccessReview (rendered as the `-openshift-sar` flag), e.g. `{resource: namespaces, verb: get}`. **When left empty, every user who passes the domain filter may access the UI.**
+* exposes `/oauth/healthz` via livenessProbe / readinessProbe on the proxy port.
+
+> **Note:** the OAuth proxy and the API container rely on the mounted ServiceAccount token (`-client-secret-file`, `--prometheus-bearer-token-path`), so `automountServiceAccountToken` must stay `true` (the default) when `openshift.enabled=true`.
+
+To expose the UI through an OpenShift `Route`, set `openshift.route.enabled=true`. By default the router derives the host (`<route>-<namespace>.<cluster-domain>`); set `openshift.route.subdomain` or `openshift.route.host` to override it, and `openshift.route.annotations` for extra annotations. The route uses `Reencrypt` termination when the OAuth proxy is enabled (and `openshift.oauth.tls=true`), and `Edge` termination otherwise.
+
+Minimal values for an OpenShift install with OAuth proxy and Route:
+
+```yaml
+openshift:
+  enabled: true
+  oauth:
+    enabled: true
+    image:
+      repository: quay.io/openshift/origin-oauth-proxy
+      tag: "4.16"
+    existingSecret: pyrra-oauth-session  # pre-created, e.g. via External Secrets
+    emailDomains: ["example.com"]
+  route:
+    enabled: true
+```
+
 {{ template "chart.valuesSection" . }}
 
 ## Upgrading

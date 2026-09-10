@@ -1,0 +1,20 @@
+{{- if .Values.openshift.enabled -}}
+{{- if and (not .Values.serviceAccount.create) (not .Values.serviceAccount.name) }}
+{{- fail "pyrra: openshift.enabled binds cluster-monitoring-view to the release ServiceAccount, which resolves to 'default' with serviceAccount.create=false and no serviceAccount.name — set serviceAccount.name or serviceAccount.create=true" }}
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "pyrra.serviceAccountName" . }}-cluster-monitoring-view
+  labels:
+    {{- include "pyrra.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "pyrra.serviceAccountName" . }}
+    namespace: {{ include "pyrra.namespace" . }}
+{{- end -}}

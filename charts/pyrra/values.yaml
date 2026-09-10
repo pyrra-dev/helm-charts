@@ -309,3 +309,67 @@ extraObjects: []
   #     name: {{ include "pyrra.fullname" . }}-secret
   #   stringData:
   #     key: value
+
+openshift:
+  # -- enables common OpenShift support
+  enabled: false
+  oauth:
+    # -- enables the OpenShift OAuth-proxy sidecar in front of the API
+    enabled: false
+    image:
+      # -- OAuth-proxy image repository
+      repository: ""
+      # -- OAuth-proxy image tag
+      tag: ""
+      # -- OAuth-proxy image pull policy
+      pullPolicy: IfNotPresent
+    # -- listening port of the OAuth-proxy sidecar (used by the container,
+    # the Service and the proxy address flag)
+    port: 9091
+    # -- when true the proxy terminates TLS itself (HTTPS listener, Reencrypt
+    # Route, service.beta.openshift.io/serving-cert-secret-name annotation);
+    # when false the proxy listens on plain HTTP behind an Edge-terminated Route
+    tls: true
+    # -- plaintext session secret used by the OAuth-proxy cookie. Ignored when
+    # existingSecret is set. Not recommended for production — the value ends up
+    # in the values file and the Helm release Secret; prefer existingSecret.
+    sessionSecret: ""
+    # -- name of an existing Secret that contains the OAuth-proxy session
+    # secret. When set, the chart does not render a session Secret and the
+    # plaintext sessionSecret value is ignored.
+    existingSecret: ""
+    # -- key inside existingSecret holding the session secret value
+    existingSecretKey: session_secret
+    # -- email domains accepted by the OAuth-proxy (rendered as -email-domain flags).
+    # Required when openshift.oauth.enabled=true; use ["*"] to accept any domain.
+    emailDomains: []
+    # -- SubjectAccessReview required of authenticated users, rendered as the
+    # -openshift-sar flag (object or list, serialized to JSON). When empty,
+    # every authenticated user may access the UI.
+    sar: {}
+    # -- extra args appended to the OAuth-proxy command line
+    extraArgs: []
+    # -- resource limits and requests for the OAuth-proxy container
+    resources:
+      limits:
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 128Mi
+    # -- security context for the OAuth-proxy container
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+  route:
+    # -- enables creation of an OpenShift Route
+    enabled: false
+    # -- annotations added to the Route
+    annotations: {}
+    # -- explicit host for the Route; when empty the router derives it
+    host: ""
+    # -- application subdomain within the cluster domain; when empty (and no
+    # host) the router derives <route>-<namespace>.<cluster-domain>
+    subdomain: ""

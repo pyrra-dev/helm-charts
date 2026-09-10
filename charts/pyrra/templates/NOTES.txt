@@ -1,5 +1,7 @@
 1. Get the application URL by running these commands:
-{{- if .Values.ingress.enabled }}
+{{- if and .Values.openshift.enabled .Values.openshift.route.enabled }}
+  echo "https://$(kubectl get route --namespace {{ include "pyrra.namespace" . }} {{ include "pyrra.fullname" . }} -o jsonpath='{.spec.host}')"
+{{- else if .Values.ingress.enabled }}
 {{- range $host := .Values.ingress.hosts }}
   {{- range .paths }}
   http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}

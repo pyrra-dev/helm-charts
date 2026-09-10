@@ -90,6 +90,44 @@ If the SLO object is invalid, the admission controller will reject the request a
 Pyrra provides Grafana dashboards additionally to it's own UI.
 The dashboards can be deployed using a ConfigMap and get's automatically [reloaded by a Grafana sidecar](https://github.com/grafana/helm-charts/tree/main/charts/grafana#sidecar-for-dashboards).
 
+## OpenShift
+
+The chart can be deployed on OpenShift / OKD clusters. Enable it with `openshift.enabled=true`. When enabled the chart:
+
+* mounts the cluster-injected `openshift-service-ca.crt` ConfigMap into the API container and passes `--tls-client-ca-file` plus `--prometheus-bearer-token-path` so Pyrra can talk to the cluster-monitoring stack (for example `thanos-querier`).
+* binds the ServiceAccount to the built-in OpenShift `cluster-monitoring-view` ClusterRole and grants `namespaces: get/list/watch` on the chart's own ClusterRole.
+
+Optionally, set `openshift.oauth.enabled=true` to add an `oauth-proxy` sidecar that protects the UI with OpenShift OAuth. This:
+
+* runs `openshift/oauth-proxy` (set `openshift.oauth.image.repository` and `openshift.oauth.image.tag`; resources, securityContext and `imagePullPolicy` are configurable via the corresponding `openshift.oauth.*` keys).
+* listens on `openshift.oauth.port` (default `9091`).
+* terminates TLS by default (`openshift.oauth.tls=true`): the chart requests a serving certificate via the `service.beta.openshift.io/serving-cert-secret-name` Service annotation and the Route uses `Reencrypt` termination. Set `openshift.oauth.tls=false` to run the proxy on plain HTTP behind an `Edge`-terminated Route instead.
+* adds the ServiceAccount OAuth redirect reference annotation (when `openshift.route.enabled=true`) and the `tokenreviews` / `subjectaccessreviews` RBAC needed by the proxy.
+* requires a session secret: point `openshift.oauth.existingSecret` at a pre-created Secret (key configurable via `openshift.oauth.existingSecretKey`, default `session_secret`) — recommended, the value never passes through the values file or the Helm release. Alternatively set `openshift.oauth.sessionSecret` (plaintext, rendered into a `<release>-session` Secret) for a quick start.
+* accepts only the email domains listed in `openshift.oauth.emailDomains` (required — use `["*"]` to accept any domain); pass extra proxy flags through `openshift.oauth.extraArgs`.
+* optionally authorizes users beyond authentication: set `openshift.oauth.sar` to a SubjectAccessReview (rendered as the `-openshift-sar` flag), e.g. `{resource: namespaces, verb: get}`. **When left empty, every user who passes the domain filter may access the UI.**
+* exposes `/oauth/healthz` via livenessProbe / readinessProbe on the proxy port.
+
+> **Note:** the OAuth proxy and the API container rely on the mounted ServiceAccount token (`-client-secret-file`, `--prometheus-bearer-token-path`), so `automountServiceAccountToken` must stay `true` (the default) when `openshift.enabled=true`.
+
+To expose the UI through an OpenShift `Route`, set `openshift.route.enabled=true`. By default the router derives the host (`<route>-<namespace>.<cluster-domain>`); set `openshift.route.subdomain` or `openshift.route.host` to override it, and `openshift.route.annotations` for extra annotations. The route uses `Reencrypt` termination when the OAuth proxy is enabled (and `openshift.oauth.tls=true`), and `Edge` termination otherwise.
+
+Minimal values for an OpenShift install with OAuth proxy and Route:
+
+```yaml
+openshift:
+  enabled: true
+  oauth:
+    enabled: true
+    image:
+      repository: quay.io/openshift/origin-oauth-proxy
+      tag: "4.16"
+    existingSecret: pyrra-oauth-session  # pre-created, e.g. via External Secrets
+    emailDomains: ["example.com"]
+  route:
+    enabled: true
+```
+
 ## Values
 
 | Key | Type | Default | Description |
@@ -137,6 +175,25 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 | nameOverride | string | `""` | overrides chart name |
 | namespaceOverride | string | `""` | Overrides the namespace for all resources (defaults to .Release.Namespace) |
 | nodeSelector | object | `{}` | node selector for scheduling server pod |
+| openshift.enabled | bool | `false` | enables common OpenShift support |
+| openshift.oauth.emailDomains | list | `[]` | email domains accepted by the OAuth-proxy (rendered as -email-domain flags). Required when openshift.oauth.enabled=true; use ["*"] to accept any domain. |
+| openshift.oauth.enabled | bool | `false` | enables the OpenShift OAuth-proxy sidecar in front of the API |
+| openshift.oauth.existingSecret | string | `""` | name of an existing Secret that contains the OAuth-proxy session secret. When set, the chart does not render a session Secret and the plaintext sessionSecret value is ignored. |
+| openshift.oauth.existingSecretKey | string | `"session_secret"` | key inside existingSecret holding the session secret value |
+| openshift.oauth.extraArgs | list | `[]` | extra args appended to the OAuth-proxy command line |
+| openshift.oauth.image.pullPolicy | string | `"IfNotPresent"` | OAuth-proxy image pull policy |
+| openshift.oauth.image.repository | string | `""` | OAuth-proxy image repository |
+| openshift.oauth.image.tag | string | `""` | OAuth-proxy image tag |
+| openshift.oauth.port | int | `9091` | listening port of the OAuth-proxy sidecar (used by the container, the Service and the proxy address flag) |
+| openshift.oauth.resources | object | `{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}` | resource limits and requests for the OAuth-proxy container |
+| openshift.oauth.sar | object | `{}` | SubjectAccessReview required of authenticated users, rendered as the -openshift-sar flag (object or list, serialized to JSON). When empty, every authenticated user may access the UI. |
+| openshift.oauth.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | security context for the OAuth-proxy container |
+| openshift.oauth.sessionSecret | string | `""` | plaintext session secret used by the OAuth-proxy cookie. Ignored when existingSecret is set. Not recommended for production — the value ends up in the values file and the Helm release Secret; prefer existingSecret. |
+| openshift.oauth.tls | bool | `true` | when true the proxy terminates TLS itself (HTTPS listener, Reencrypt Route, service.beta.openshift.io/serving-cert-secret-name annotation); when false the proxy listens on plain HTTP behind an Edge-terminated Route |
+| openshift.route.annotations | object | `{}` | annotations added to the Route |
+| openshift.route.enabled | bool | `false` | enables creation of an OpenShift Route |
+| openshift.route.host | string | `""` | explicit host for the Route; when empty the router derives it |
+| openshift.route.subdomain | string | `""` | application subdomain within the cluster domain; when empty (and no host) the router derives <route>-<namespace>.<cluster-domain> |
 | operator | object | `{"leaderElection":{"enabled":true,"namespace":""},"resizePolicy":[],"resources":{"limits":{"memory":"128Mi"},"requests":{"cpu":"10m","memory":"128Mi"}}}` | All settings related to the "operator" kubernetes container |
 | operator.leaderElection.enabled | bool | `true` | enables leader election for the operator (required when running multiple replicas) |
 | operator.leaderElection.namespace | string | `""` | namespace where the leader election lease resource will be created (defaults to release namespace) |
