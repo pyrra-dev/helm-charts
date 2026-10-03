@@ -40,7 +40,7 @@ jobs:
           # renovate: github=helm/helm
           helm-version: v4.3.0
           # renovate: github=helm-unittest/helm-unittest
-          unittest-version: v1.2.0
+          unittest-version: v1.2.1
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Helm
