@@ -130,6 +130,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      issues: write # post PR summary comment
       pull-requests: write # post PR summary comment
     steps:
       - name: Checkout Code
@@ -142,6 +143,7 @@ jobs:
         uses: super-linter/super-linter/slim@2da136927bd4a73596db63044b504547c62cb854 # v9.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: true
           LINTER_RULES_PATH: .github/linters
           MULTI_STATUS: false
           VALIDATE_ALL_CODEBASE: false
@@ -153,6 +155,7 @@ jobs:
           VALIDATE_GITHUB_ACTIONS_ZIZMOR: true
           VALIDATE_GITLEAKS: true
           VALIDATE_JSON: true
+          VALIDATE_JSONC: true
           VALIDATE_MARKDOWN: true
           VALIDATE_NATURAL_LANGUAGE: true
           VALIDATE_PYTHON: true
