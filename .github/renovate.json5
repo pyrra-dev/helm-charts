@@ -7,6 +7,16 @@
   ],
   packageRules: [
     {
+      description: 'helm-docs carries two CalVer tags from 2019 that outrank the current v1 line numerically, so only accept the v-prefixed semver tags.',
+      matchPackageNames: ['norwoodj/helm-docs'],
+      allowedVersions: '/^v\\d+\\.\\d+\\.\\d+$/',
+    },
+    {
+      description: 'The prometheus-community/helm-charts preset disables every package outside charts/ and .github/workflows/, so re-enable the pre-commit hooks.',
+      matchFileNames: ['.pre-commit-config.yaml'],
+      enabled: true,
+    },
+    {
       matchManagers: ['github-actions'],
       automerge: true,
     },
