@@ -13,6 +13,9 @@ Container definition for the Pyrra operator (kubernetes mode).
 {{- if and $mimir.url (not (has $mimir.deploymentMode (list "standalone" "distributed"))) }}
 {{- fail (printf "pyrra: mimir.deploymentMode must be either standalone or distributed, got %q" $mimir.deploymentMode) }}
 {{- end }}
+{{- if and .Values.configMapMode.enabled $mimir.url }}
+{{- fail "pyrra: configMapMode.enabled and mimir.url are mutually exclusive, config map mode makes the operator write config maps and never provision rules to Mimir" }}
+{{- end }}
 - name: {{ .Chart.Name }}-kubernetes
   securityContext:
     {{- toYaml .Values.securityContext | nindent 4 }}
@@ -22,6 +25,9 @@ Container definition for the Pyrra operator (kubernetes mode).
     - kubernetes
     {{- if .Values.genericRules.enabled }}
     - --generic-rules
+    {{- end }}
+    {{- if .Values.configMapMode.enabled }}
+    - --config-map-mode
     {{- end }}
     {{- if and .Values.validatingWebhookConfiguration.enabled ($.Capabilities.APIVersions.Has "cert-manager.io/v1") }}
     - --disable-webhooks=false

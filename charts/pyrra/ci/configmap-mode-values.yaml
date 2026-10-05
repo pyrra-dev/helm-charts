@@ -1,0 +1,6 @@
+---
+# Exercises config map mode: the operator writes recording rules into ConfigMaps instead of
+# PrometheusRule objects and the ClusterRole gains the matching ConfigMap permissions. Installable
+# on kind as is, nothing cluster-specific is required.
+configMapMode:
+  enabled: true

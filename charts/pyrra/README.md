@@ -96,6 +96,7 @@ The dashboards can be deployed using a ConfigMap and get's automatically [reload
 |-----|------|---------|-------------|
 | additionalLabels | object | `{}` |  |
 | automountServiceAccountToken | bool | `true` | Whether to automount the service account token in the pod, enabled by default because Pyrra's kubernetes container requires Kubernetes API access. |
+| configMapMode.enabled | bool | `false` | writes the generated recording rules into ConfigMaps in the plain Prometheus format instead of PrometheusRule objects, for setups that read their rules from ConfigMaps. Grants the operator the ConfigMap permissions it needs. Mutually exclusive with `mimir.url`. |
 | dashboards.annotations | object | `{}` |  |
 | dashboards.enabled | bool | `false` | enables Grafana dashboards being deployed via configmap |
 | dashboards.extraLabels | object | `{}` |  |

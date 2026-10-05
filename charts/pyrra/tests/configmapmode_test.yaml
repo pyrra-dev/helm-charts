@@ -1,0 +1,106 @@
+---
+suite: configMapMode
+templates:
+  - templates/deployment.yaml
+  - templates/clusterrole.yaml
+tests:
+  - it: should not add the flag or the ConfigMap rule by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --config-map-mode
+        template: templates/deployment.yaml
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - configmaps
+            verbs:
+              - create
+              - get
+              - list
+              - update
+              - watch
+        template: templates/clusterrole.yaml
+
+  - it: should render the flag on the operator when enabled
+    set:
+      configMapMode.enabled: true
+    template: templates/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --config-map-mode
+
+  - it: should keep the flag on the operator container, not on the api container
+    set:
+      configMapMode.enabled: true
+    template: templates/deployment.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[1].args
+          content: --config-map-mode
+
+  - it: should grant the ConfigMap permissions the operator needs when enabled
+    set:
+      configMapMode.enabled: true
+    template: templates/clusterrole.yaml
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - configmaps
+            verbs:
+              - create
+              - get
+              - list
+              - update
+              - watch
+
+  - it: should keep the PrometheusRule permissions when enabled
+    set:
+      configMapMode.enabled: true
+    template: templates/clusterrole.yaml
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - monitoring.coreos.com
+            resources:
+              - prometheusrules
+            verbs:
+              - create
+              - delete
+              - get
+              - list
+              - patch
+              - update
+              - watch
+
+  - it: should fail when combined with Mimir
+    set:
+      configMapMode.enabled: true
+      mimir.url: http://mimir.mimir.svc:8080
+    template: templates/deployment.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: configMapMode.enabled and mimir.url are mutually exclusive
+
+  - it: should leave the Mimir integration alone when disabled
+    set:
+      configMapMode.enabled: false
+      mimir.url: http://mimir.mimir.svc:8080
+    template: templates/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --mimir-url=http://mimir.mimir.svc:8080
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --config-map-mode
