@@ -21,7 +21,7 @@
       automerge: true,
     },
     {
-      matchPackageNames: ['helm/helm', 'helm/chart-testing', 'python/cpython'],
+      matchPackageNames: ['helm/helm', 'helm/chart-testing'],
       automerge: true,
     },
     {
