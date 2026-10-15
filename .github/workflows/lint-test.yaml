@@ -38,7 +38,7 @@ jobs:
         with:
           charts: charts/*
           # renovate: github=helm/helm
-          helm-version: v4.3.0
+          helm-version: v4.3.1
           # renovate: github=helm-unittest/helm-unittest
           unittest-version: v1.2.1
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -47,7 +47,7 @@ jobs:
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           # renovate: github=helm/helm
-          version: v4.3.0
+          version: v4.3.1
 
       - name: Set up kubeconform
         run: |
