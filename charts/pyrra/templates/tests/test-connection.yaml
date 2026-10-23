@@ -10,7 +10,7 @@ metadata:
 spec:
   containers:
     - name: wget
-      image: docker.io/busybox:1.37
+      image: docker.io/busybox:1.38
       command: ['wget']
       {{- if .Values.routePrefix }}
       args: ['-O-', '{{ include "pyrra.fullname" . }}:{{ .Values.service.port }}{{ .Values.routePrefix }}']
