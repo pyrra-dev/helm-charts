@@ -23,3 +23,20 @@ tests:
           of: ConfigMap
       - isNotNullOrEmpty:
           path: metadata.labels.grafana_dashboard
+
+  - it: should query the generic rules Pyrra records in the detail dashboard
+    set:
+      dashboards.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: pyrra-detail
+    asserts:
+      - matchRegex:
+          path: data["pyrra-detail.json"]
+          pattern: 'sum\(pyrra_requests:rate5m\{slo=\\"\$slo\\"\}\)'
+      - matchRegex:
+          path: data["pyrra-detail.json"]
+          pattern: 'sum\(pyrra_errors:rate5m\{slo=\\"\$slo\\"\}\)'
+      - notMatchRegex:
+          path: data["pyrra-detail.json"]
+          pattern: 'pyrra_(requests|errors)_total'
