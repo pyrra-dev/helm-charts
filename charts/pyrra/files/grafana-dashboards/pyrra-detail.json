@@ -619,7 +619,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
+          "editorMode": "builder",
           "expr": "sum(pyrra_errors:rate5m{slo=\"$slo\"})",
           "hide": false,
           "legendFormat": "__auto",
